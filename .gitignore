@@ -22,8 +22,12 @@
 *.la
 *.a
 *.lib
+*.d
 
 # Executables
 *.exe
 *.out
 *.app
+
+# SVN
+.svn/
