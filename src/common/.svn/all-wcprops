@@ -1,0 +1,47 @@
+K 25
+svn:wc:ra_dav:version-url
+V 66
+/reps/cmspxldaq/!svn/ver/5366/PixelTCDSSupervisor/trunk/src/common
+END
+PixelPISupervisor.cc
+K 25
+svn:wc:ra_dav:version-url
+V 87
+/reps/cmspxldaq/!svn/ver/5021/PixelTCDSSupervisor/trunk/src/common/PixelPISupervisor.cc
+END
+Exception.cc
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/reps/cmspxldaq/!svn/ver/5021/PixelTCDSSupervisor/trunk/src/common/Exception.cc
+END
+PixelTCDSSupervisor.cc
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/reps/cmspxldaq/!svn/ver/5366/PixelTCDSSupervisor/trunk/src/common/PixelTCDSSupervisor.cc
+END
+version.cc
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/reps/cmspxldaq/!svn/ver/5021/PixelTCDSSupervisor/trunk/src/common/version.cc
+END
+HwLeaseHandler.cc
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/reps/cmspxldaq/!svn/ver/5021/PixelTCDSSupervisor/trunk/src/common/HwLeaseHandler.cc
+END
+PixeliCISupervisor.cc
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/reps/cmspxldaq/!svn/ver/5022/PixelTCDSSupervisor/trunk/src/common/PixeliCISupervisor.cc
+END
+PixelTCDSBase.cc
+K 25
+svn:wc:ra_dav:version-url
+V 83
+/reps/cmspxldaq/!svn/ver/5021/PixelTCDSSupervisor/trunk/src/common/PixelTCDSBase.cc
+END
