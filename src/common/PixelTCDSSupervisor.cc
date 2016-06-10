@@ -48,7 +48,7 @@ try
     logger_(getApplicationLogger())
   {
     // Set the application icon.
-    std::string const iconFileName = "pixel/PixelTCDSSupervisor/html/pixelici_icon.png";
+    std::string const iconFileName = "/pixel/PixelWeb/icons/pixelici_icon.png";
     getApplicationDescriptor()->setAttribute("icon", iconFileName);
 
     // Registration of the InfoSpace variables.
@@ -653,26 +653,29 @@ void
 pixel::tcds::PixelTCDSSupervisor::mainPage(xgi::Input* in, xgi::Output* out)
 {
   // Local parameters (i.e., of this XDAQ application).
-  *out << "<h1>Local information</h1>";
+  *out << "<h1>Local Dinh-Luan: haha1a11a information</h1>\n\n";
+  loadWaitScreen(out);
+  
+  
   std::string state = fsm_.getStateName (fsm_.getCurrentState());
   *out << "<p><b>FSM state:</b> '" << state << "'</p>";
   *out << "<p>"
        << "<b>Connected to TCDS application:</b> "
        << "class '" << tcdsAppClassName() << "'"
        << ", instance number " << tcdsAppInstance()
-       << "</p>";
-  *out << "<p><b>Session id:</b> '" << sessionId() << "'</p>";
+       << "</p>\n";
+  *out << "<p><b>Session id:</b> '" << sessionId() << "'</p>\n";
   *out << "<p><b>Hardware lease renewal interval:</b> "
        << hwLeaseRenewalInterval()
-       << "</p>";
-  *out << "<p><b>Run number:</b> '" << runNumber_.toString() << "'</p>";
+       << "</p>\n";
+  *out << "<p><b>Run number:</b> '" << runNumber_.toString() << "'</p>\n";
   *out << "<p><b>Hardware configuration file:</b> '"
-       << hwCfgFileName_.toString() << "'</p>";
+       << hwCfgFileName_.toString() << "'</p>\n";
   *out << "<p><b>Last action:</b> '";
   if (statusMsg_.toString().find("error") != std::string::npos)
-    *out << "<font color=\"red\">" << statusMsg_.toString() << "'</font></p>";
+    *out << "<font color=\"red\">" << statusMsg_.toString() << "'</font></p>\n";
   else
-    *out << statusMsg_.toString() << "'</p>";
+    *out << statusMsg_.toString() << "'</p>\n";
 
   //----------
 
@@ -854,6 +857,31 @@ pixel::tcds::PixelTCDSSupervisor::redirect(xgi::Input* in, xgi::Output* out)
   *out << "<script language=\"javascript\">"
        << "window.location=\"Default\""
        << "</script>";
+}
+
+void
+pixel::tcds::PixelTCDSSupervisor::loadWaitScreen(xgi::Output* out)
+{
+  *out<<"<link href=\"/pixel/css/please-wait.css\" rel=\"stylesheet\">\n";
+  *out<<"<link href=\"/pixel/css/spinkit.css\" rel=\"stylesheet\">\n\n";
+  
+   *out<<"<script type=\"text/javascript\" src=\"/pixel/js/please-wait.js\"></script>\n";
+  *out<<"<script type=\"text/javascript\">\n"
+      <<"window.loading_screen = window.pleaseWait({\n"
+      <<"logo: \"/xdaq/images/xdaq-logo-256.png\",\n"
+      <<"backgroundColor: '#f46d3b',\n"
+      <<"loadingHtml: \"<p class='loading-message'>Loading....</p><div class='sk-spinner sk-spinner-wave'><div class='sk-rect1'></div><div class='sk-rect2'></div><div class='sk-rect3'></div><div class='sk-rect4'></div><div class='sk-rect5'></div></div>\"\n"	
+      <<"});\n"
+	  <<"$(document).ready(loading_screen.finish());\n"
+	  <<"</script>\n\n";
+	  
+	  
+ /* *out<<"<div class=\"spinner\">\n"
+	  <<"<div class=\"double-bounce1\"></div>\n"
+	  <<"<div class=\"double-bounce2\"></div>\n"
+	  <<"</div>\"\n"; */
+  //*out<<" <div class=\"sk-rotating-plane\"></div>\n";
+	  
 }
 
 void
