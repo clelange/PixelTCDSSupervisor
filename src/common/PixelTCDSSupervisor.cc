@@ -888,6 +888,7 @@ pixel::tcds::PixelTCDSSupervisor::loadWaitScreen(xgi::Output* out)
 void
 pixel::tcds::PixelTCDSSupervisor::lostConnection(xgi::Output* out)
 {
+	*out<<"<link href=\"/pixel/PixelWeb/css/xdaqPage.css\" rel=\"stylesheet\">\n\n";
 	*out<<"<script type=\"text/javascript\" src=\"/pixel/PixelWeb/js/lostConnection.js\"></script>\n";
 	*out<<"<script type=\"text/javascript\" src=\"/pixel/PixelWeb/js/windowLoad.js\"></script>\n";
 	*out<<"<script type=\"text/javascript\">\n"
