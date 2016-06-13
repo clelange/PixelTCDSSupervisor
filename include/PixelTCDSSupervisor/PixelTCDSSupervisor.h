@@ -104,6 +104,7 @@ namespace pixel {
       void redirect(xgi::Input* in, xgi::Output* out);
 	  
 	  void loadWaitScreen(xgi::Output* out);
+	  void lostConnection(xgi::Output* out);
 
       void queryFSMState(xgi::Input* in, xgi::Output* out);
       void queryHwLeaseOwner(xgi::Input* in, xgi::Output* out);

@@ -655,7 +655,7 @@ pixel::tcds::PixelTCDSSupervisor::mainPage(xgi::Input* in, xgi::Output* out)
   // Local parameters (i.e., of this XDAQ application).
   *out << "<h1>Local Dinh-Luan: haha1a11a information</h1>\n\n";
   loadWaitScreen(out);
-  
+  lostConnection(out);
   
   std::string state = fsm_.getStateName (fsm_.getCurrentState());
   *out << "<p><b>FSM state:</b> '" << state << "'</p>";
@@ -862,10 +862,11 @@ pixel::tcds::PixelTCDSSupervisor::redirect(xgi::Input* in, xgi::Output* out)
 void
 pixel::tcds::PixelTCDSSupervisor::loadWaitScreen(xgi::Output* out)
 {
-  *out<<"<link href=\"/pixel/css/please-wait.css\" rel=\"stylesheet\">\n";
-  *out<<"<link href=\"/pixel/css/spinkit.css\" rel=\"stylesheet\">\n\n";
+  *out<<"<link href=\"/pixel/PixelWeb/css/please-wait.css\" rel=\"stylesheet\">\n";
+  *out<<"<link href=\"/pixel/PixelWeb/css/spinkit.css\" rel=\"stylesheet\">\n\n";
   
-   *out<<"<script type=\"text/javascript\" src=\"/pixel/js/please-wait.js\"></script>\n";
+  *out<<"<script type=\"text/javascript\" src=\"/pixel/PixelWeb/js/please-wait.js\"></script>\n";
+  
   *out<<"<script type=\"text/javascript\">\n"
       <<"window.loading_screen = window.pleaseWait({\n"
       <<"logo: \"/xdaq/images/xdaq-logo-256.png\",\n"
@@ -883,6 +884,18 @@ pixel::tcds::PixelTCDSSupervisor::loadWaitScreen(xgi::Output* out)
   //*out<<" <div class=\"sk-rotating-plane\"></div>\n";
 	  
 }
+
+void
+pixel::tcds::PixelTCDSSupervisor::lostConnection(xgi::Output* out)
+{
+	*out<<"<script type=\"text/javascript\" src=\"/pixel/PixelWeb/js/lostConnection.js\"></script>\n";
+	*out<<"<script type=\"text/javascript\" src=\"/pixel/PixelWeb/js/windowLoad.js\"></script>\n";
+	*out<<"<script type=\"text/javascript\">\n"
+		//<<"alert(\"lostConnect\");\n"
+	  <<"$(window).onload = loadWin();\n"
+	  <<"</script>\n\n";
+}
+
 
 void
 pixel::tcds::PixelTCDSSupervisor::queryFSMState(xgi::Input* in, xgi::Output* out)
