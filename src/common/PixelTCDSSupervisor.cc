@@ -653,7 +653,8 @@ void
 pixel::tcds::PixelTCDSSupervisor::mainPage(xgi::Input* in, xgi::Output* out)
 {
   // Local parameters (i.e., of this XDAQ application).
-  *out << "<h1>Local Dinh-Luan: haha1a11a information</h1>\n\n";
+  *out << "<h1>Local XDAQ: information</h1>\n\n";
+	  
   loadWaitScreen(out);
   lostConnection(out);
   
@@ -862,10 +863,11 @@ pixel::tcds::PixelTCDSSupervisor::redirect(xgi::Input* in, xgi::Output* out)
 void
 pixel::tcds::PixelTCDSSupervisor::loadWaitScreen(xgi::Output* out)
 {
-  *out<<"<link href=\"/pixel/PixelWeb/css/please-wait.css\" rel=\"stylesheet\">\n";
-  *out<<"<link href=\"/pixel/PixelWeb/css/spinkit.css\" rel=\"stylesheet\">\n\n";
-  
-  *out<<"<script type=\"text/javascript\" src=\"/pixel/PixelWeb/js/please-wait.js\"></script>\n";
+
+*out<<"<link href=\"/pixel/PixelWeb/css/please-wait.css\" rel=\"stylesheet\">\n";
+*out<<"<link href=\"/pixel/PixelWeb/css/spinkit.css\" rel=\"stylesheet\">\n\n";
+
+*out<<"<script type=\"text/javascript\" src=\"/pixel/PixelWeb/js/please-wait.js\"></script>\n";
   
   *out<<"<script type=\"text/javascript\">\n"
       <<"window.loading_screen = window.pleaseWait({\n"
