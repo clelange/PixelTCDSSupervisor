@@ -871,7 +871,7 @@ pixel::tcds::PixelTCDSSupervisor::loadWaitScreen(xgi::Output* out)
   
   *out<<"<script type=\"text/javascript\">\n"
       <<"window.loading_screen = window.pleaseWait({\n"
-      <<"logo: \"/xdaq/images/xdaq-logo-256.png\",\n"
+      <<"logo: \"/pixel/PixelWeb/icons/pixelici_icon.png\",\n"
       <<"backgroundColor: '#f46d3b',\n"
       <<"loadingHtml: \"<p class='loading-message'>Loading....</p><div class='sk-spinner sk-spinner-wave'><div class='sk-rect1'></div><div class='sk-rect2'></div><div class='sk-rect3'></div><div class='sk-rect4'></div><div class='sk-rect5'></div></div>\"\n"	
       <<"});\n"
@@ -894,11 +894,20 @@ pixel::tcds::PixelTCDSSupervisor::lostConnection(xgi::Output* out)
 	*out<<"<script type=\"text/javascript\" src=\"/pixel/PixelWeb/js/lostConnection.js\"></script>\n";
 	*out<<"<script type=\"text/javascript\" src=\"/pixel/PixelWeb/js/windowLoad.js\"></script>\n";
 	*out<<"<script type=\"text/javascript\">\n"
-		//<<"alert(\"lostConnect\");\n"
 	  <<"$(window).onload = loadWin();\n"
 	  <<"</script>\n\n";
 }
 
+void
+pixel::tcds::PixelTCDSSupervisor::tabPresentation(xgi::Output* out)
+{
+	*out<<"<link href=\"/pixel/PixelWeb/css/bootstrap.css\" rel=\"stylesheet\">\n\n";
+	*out<<"<script type=\"text/javascript\" src=\"/pixel/PixelWeb/js/bootstrap.js\"></script>\n";
+	
+	*out<<"<script type=\"text/javascript\">\n"
+	  <<"$(window).onload = loadWin();\n"
+	  <<"</script>\n\n";
+}
 
 void
 pixel::tcds::PixelTCDSSupervisor::queryFSMState(xgi::Input* in, xgi::Output* out)
