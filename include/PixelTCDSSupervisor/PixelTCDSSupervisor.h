@@ -18,6 +18,9 @@
 
 #include "PixelTCDSSupervisor/PixelTCDSBase.h"
 
+#include "toolbox/TimeInterval.h"
+#include "toolbox/TimeVal.h"
+
 namespace log4cplus {
   class Logger;
 }
@@ -106,6 +109,13 @@ namespace pixel {
 	  void loadWaitScreen(xgi::Output* out);
 	  void lostConnection(xgi::Output* out);
 	  void tabPresentation(xgi::Output* out);
+	  void tableConfig(xgi::Output* out);
+	  void tableHistory(xgi::Output* out);
+	  void tableSOAP(xgi::Output* out);
+	  void tableBgoString(xgi::Output* out);
+	  void tableStatus(xgi::Output* out);
+	  void tableRemoteInfo(xgi::Output* out);
+	  void tableLogConfig(xgi::Output* out);
 
       void queryFSMState(xgi::Input* in, xgi::Output* out);
       void queryHwLeaseOwner(xgi::Input* in, xgi::Output* out);
@@ -152,6 +162,11 @@ namespace pixel {
       // PixelSupervisor
       xdaq::ApplicationDescriptor* PixelSupervisor_;
       bool firstTransition;
+	  
+	  std::string appNameAndInstance_;
+	  // The start time of the monitor. Just for a simplistic estimate
+      // of the application uptime.
+      toolbox::TimeVal timeStart_;
 
     }; // class PixelTCDSSupervisor
   } // namespace tcds
