@@ -20,6 +20,7 @@
 
 #include "toolbox/TimeInterval.h"
 #include "toolbox/TimeVal.h"
+#include "string.h"
 
 namespace log4cplus {
   class Logger;
@@ -97,6 +98,7 @@ namespace pixel {
       void ttcHardResetAction();
       void renewHardwareLeaseAction();
       void readHardwareConfigurationAction();
+	  void JSONAction();
       void sendL1AAction();
       void sendBgoAction(xdata::UnsignedInteger commandUInt);
       void sendBgoStringAction(xdata::String commandString);
@@ -116,6 +118,8 @@ namespace pixel {
 	  void tableStatus(xgi::Output* out);
 	  void tableRemoteInfo(xgi::Output* out);
 	  void tableLogConfig(xgi::Output* out);
+	  void updateVariables(xgi::Output* out);
+	  
 
       void queryFSMState(xgi::Input* in, xgi::Output* out);
       void queryHwLeaseOwner(xgi::Input* in, xgi::Output* out);
@@ -140,6 +144,9 @@ namespace pixel {
       void enableRandomTriggers(xgi::Input* in, xgi::Output* out);
       void updateHardwareConfigurationFile(xgi::Input* in, xgi::Output* out);
       void updateHardwareConfiguration(xgi::Input* in, xgi::Output* out);
+	  
+	  void jsonUpdate(xgi::Input* const in, xgi::Output* const out);
+	  void jsonUpdateCore(xgi::Input* const in, xgi::Output* const out);
       
       xoap::MessageReference fireEvent ( xoap::MessageReference msg ) throw ( xoap::exception::Exception );
 
@@ -167,6 +174,8 @@ namespace pixel {
 	  // The start time of the monitor. Just for a simplistic estimate
       // of the application uptime.
       toolbox::TimeVal timeStart_;
+	  std::string tb_Status_uptime;
+	  
 
     }; // class PixelTCDSSupervisor
   } // namespace tcds

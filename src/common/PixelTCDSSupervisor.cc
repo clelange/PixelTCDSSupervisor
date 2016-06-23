@@ -95,7 +95,8 @@ try
     xgi::framework::deferredbind(this, this, &pixel::tcds::PixelTCDSSupervisor::sendBgoTrain, "SendBgoTrain");
     xgi::framework::deferredbind(this, this, &pixel::tcds::PixelTCDSSupervisor::updateHardwareConfigurationFile, "UpdateHardwareConfigurationFile");
     xgi::framework::deferredbind(this, this, &pixel::tcds::PixelTCDSSupervisor::updateHardwareConfiguration, "UpdateHardwareConfiguration");
-    
+	xgi::deferredbind(this, this, &pixel::tcds::PixelTCDSSupervisor::jsonUpdate, "update");
+	
     // Bind workloop function
     job_ = toolbox::task::bind(this, &pixel::tcds::PixelTCDSSupervisor::working, "working");
     workLoop_ = toolbox::task::getWorkLoopFactory()->getWorkLoop(appNameAndInstance_, "waiting");
@@ -122,6 +123,7 @@ try
     xoap::bind(this, &pixel::tcds::PixelTCDSSupervisor::fireEvent, "SendL1A", XDAQ_NS_URI );
     xoap::bind(this, &pixel::tcds::PixelTCDSSupervisor::fireEvent, "UpdateHardwareConfigurationFile", XDAQ_NS_URI );
     xoap::bind(this, &pixel::tcds::PixelTCDSSupervisor::fireEvent, "UpdateHardwareConfiguration", XDAQ_NS_URI );
+	xoap::bind(this, &pixel::tcds::PixelTCDSSupervisor::fireEvent, "update", XDAQ_NS_URI );
     // xoap::bind(this, &pixel::tcds::PixelTCDSSupervisor::fireEvent, "SendBgo", XDAQ_NS_URI );
     
     // Define FSM
@@ -650,16 +652,16 @@ pixel::tcds::PixelTCDSSupervisor::enableRandomTriggersAction(xdata::UnsignedInte
 /**
  xgi bindings
 **/
-
+int tam = 0;
 void
 pixel::tcds::PixelTCDSSupervisor::mainPage(xgi::Input* in, xgi::Output* out)
 {
   // Local parameters (i.e., of this XDAQ application).
   //*out << "<h1>Local XDAQ: information</h1>\n\n";
-	  
+	
   loadWaitScreen(out);
   lostConnection(out);
-  
+  //updateVariables(out);
 	*out<<"<link href=\"/pixel/PixelWeb/css/bootstrap.css\" rel=\"stylesheet\">\n\n";
 	*out<<"<script type=\"text/javascript\" src=\"/pixel/PixelWeb/js/bootstrap.js\"></script>\n";
 	
@@ -675,6 +677,9 @@ pixel::tcds::PixelTCDSSupervisor::mainPage(xgi::Input* in, xgi::Output* out)
 	  
   tableSOAP(out);
 	
+		
+	 std::cout<<tam<<"\n";
+	 tam = tam+1;
 }
 
 void
@@ -861,6 +866,14 @@ pixel::tcds::PixelTCDSSupervisor::tableSOAP(xgi::Output* out)
 	  <<"</script>\n\n";
 }
 
+
+void
+pixel::tcds::PixelTCDSSupervisor::updateVariables(xgi::Output* out)
+{	
+	
+}
+
+
 void
 pixel::tcds::PixelTCDSSupervisor::tableBgoString(xgi::Output* out)
 {
@@ -982,6 +995,9 @@ pixel::tcds::PixelTCDSSupervisor::tableStatus(xgi::Output* out)
 {
 toolbox::TimeVal timeNow(toolbox::TimeVal::gettimeofday());
 toolbox::TimeInterval upTime = timeNow - timeStart_;
+tb_Status_uptime = upTime.toString();
+
+
 *out<<"<table class=\"table table-hover\" style=\"display: inline-block; float: left;\">\n"
 		<<"<thead>\n"
 		<<"<tr>\n"
@@ -1018,8 +1034,9 @@ toolbox::TimeInterval upTime = timeNow - timeStart_;
 		
 		<<"<tr>\n"
         <<"<td>Uptime</td>\n"
-        <<"<td>"<<upTime<<"</td>\n"
-		<<"</tr>\n"
+        <<"<td id=\"tb_Status_uptime\">"<<tb_Status_uptime<<"</td>\n";
+		std::cout<<"upTime="<<upTime<<"\n"  ;
+		*out<<"</tr>\n"
 		
 		<<"<tr>\n"
         <<"<td>Latest monitoring update time</td>\n"
@@ -1390,6 +1407,104 @@ pixel::tcds::PixelTCDSSupervisor::updateHardwareConfiguration(xgi::Input* in, xg
   redirect(in, out);
 }
 
+
+void
+pixel::tcds::PixelTCDSSupervisor::JSONAction()
+{
+
+}
+void
+pixel::tcds::PixelTCDSSupervisor::jsonUpdate(xgi::Input* const in, xgi::Output* const out)
+{
+  try
+    {
+      //Luan them
+	std::string tb_Config_state = fsm_.getStateName (fsm_.getCurrentState());
+	std::string tb_Config_TCDS = "class '" + tcdsAppClassName() + "', instance number " + std::string(itoa(tcdsAppInstance()));
+	std::string tb_Config_sessionID = "'" + sessionId() + "'";
+	std::string tb_Config_renewInteval = hwLeaseRenewalInterval();
+	std::string tb_Config_runNumber = runNumber_.toString();
+	std::string tb_Config_hardware = hwCfgFileName_.toString();
+	std::string tb_Config_statusMsg = statusMsg_.toString();
+	
+	
+	std::string const hwLeaseOwnerId(tcdsHwLeaseOwnerId_.toString());
+	std::string tmpStr("");
+	  if (hwLeaseOwnerId == "")
+		{
+		  tmpStr = " (hardware not leased/lease expired)";
+		}
+	std::string tb_Remote_tcdsState = tcdsState_.toString();
+	std::string tb_Remote_Hardware = "'" + hwLeaseOwnerId + "'" + tmpStr;
+	
+	toolbox::TimeVal timeNow(toolbox::TimeVal::gettimeofday());
+	toolbox::TimeInterval upTime = timeNow - timeStart_;
+
+	tb_Status_uptime = upTime.toString();
+	
+	/**out<<"<script type=\"text/javascript\" src=\"/pixel/PixelWeb/js/button.js\"></script>\n";
+	*out<<"<script>\n"
+	  <<"loopUpdateVariables(\""<<tb_Config_state<<"\",\""<<"abc"<<"\",\""<<tb_Config_sessionID<<"\",\""<<tb_Config_renewInteval<<"\",\""<<tb_Config_runNumber<<"\",\""<<tb_Config_hardware<<"\",\""<<tb_Config_statusMsg<<"\",\""<<tb_Remote_tcdsState<<"\",\""<<tb_Remote_Hardware<<"\",\""<<tb_Status_uptime<<"\");\n"
+	  <<"</script>\n\n"; */
+	  
+	  out->getHTTPResponseHeader().addHeader("Content-Type", "application/json");
+	  *out << "{ \"upTime\": \"" << tb_Status_uptime << "\"}\n";
+	
+    }
+  catch (xcept::Exception& err)
+    {
+      std::string const msg =
+        toolbox::toString("Failed to serve the JSON update. "
+                          "Caught an exception: '%s'.", err.what());
+      //ERROR(msg);
+      //XCEPT_DECLARE(tcds::exception::RuntimeProblem, top, msg);
+      //getOwnerApplication()->notifyQualified("error", top);
+    }
+}
+
+
+void
+pixel::tcds::PixelTCDSSupervisor::jsonUpdateCore(xgi::Input* const in, xgi::Output* const out)
+{
+	
+  // Check if the other side supports gzip.
+  bool doGZIP = false;
+  std::string const acceptEncoding = in->getenv("ACCEPT_ENCODING");
+  if (!acceptEncoding.empty() && (acceptEncoding.find("gzip") != std::string::npos))
+    {
+      doGZIP = true;
+    }
+
+  // Prepare the actual JSON contents.
+  std::stringstream tmp("");
+  std::string const jsonTmp = "{ \"uptime\" : upTime }";
+  if (!jsonTmp.empty())
+    {
+      if (!tmp.str().empty())
+        {
+          tmp << ",\n";
+        }
+      tmp << jsonTmp;
+    }
+  
+
+  std::string jsonContents = "{\n" + tmp.str() + "\n}";
+  
+  
+  // Stuff everything into the output.
+  out->getHTTPResponseHeader().addHeader("Content-Type", "application/json");
+  if (doGZIP)
+    {
+      out->getHTTPResponseHeader().addHeader("Content-Encoding", "gzip");
+      //std::string const tmp = tcds::utils::compressString(jsonContents);
+      //*out << tmp;
+    }
+  else
+    {
+      *out << jsonContents;
+    }
+}
+
 void
 pixel::tcds::PixelTCDSSupervisor::onException(xcept::Exception& err)
 {
@@ -1528,6 +1643,10 @@ xoap::MessageReference pixel::tcds::PixelTCDSSupervisor::fireEvent ( xoap::Messa
       else if (commandName == "SendL1A")
       {
         sendL1AAction();
+      }
+	  else if (commandName == "update")
+      {
+        JSONAction();
       }
       else if (commandName == "SendBgo")
       {
