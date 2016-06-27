@@ -58,24 +58,24 @@ namespace pixel {
       // FSM state transition
       void fsmTransition(std::string eventName)
               throw (xcept::Exception);
-      
+
       //
       // SOAP Callback triggers state change initialized -> working
       //
       xoap::MessageReference Configure (xoap::MessageReference msg)
               throw (xoap::exception::Exception);
-      
+
       //
       // Finite State Machine callback for entering state
       //
       void stateChanged(toolbox::fsm::FiniteStateMachine & fsm)
-              throw (toolbox::fsm::exception::Exception);             
-      
+              throw (toolbox::fsm::exception::Exception);
+
       //
       // WorkLoop function performing until ICIController is configured
       //
       bool working(toolbox::task::WorkLoop* wl);
-    
+
     protected:
       toolbox::fsm::FiniteStateMachine fsm_; // the actual state machine
       toolbox::task::WorkLoop* workLoop_;
@@ -104,10 +104,10 @@ namespace pixel {
       void sendBgoStringAction(xdata::String commandString);
       void sendBgoTrainAction(xdata::String trainString);
       void enableRandomTriggersAction(xdata::UnsignedInteger frequencyUInt);
-      
+
       void mainPage(xgi::Input* in, xgi::Output* out);
       void redirect(xgi::Input* in, xgi::Output* out);
-	  
+
 	  void loadWaitScreen(xgi::Output* out);
 	  void lostConnection(xgi::Output* out);
 	  void tabPresentation(xgi::Output* out);
@@ -119,7 +119,7 @@ namespace pixel {
 	  void tableRemoteInfo(xgi::Output* out);
 	  void tableLogConfig(xgi::Output* out);
 	  void updateVariables(xgi::Output* out);
-	  
+
 
       void queryFSMState(xgi::Input* in, xgi::Output* out);
       void queryHwLeaseOwner(xgi::Input* in, xgi::Output* out);
@@ -144,14 +144,14 @@ namespace pixel {
       void enableRandomTriggers(xgi::Input* in, xgi::Output* out);
       void updateHardwareConfigurationFile(xgi::Input* in, xgi::Output* out);
       void updateHardwareConfiguration(xgi::Input* in, xgi::Output* out);
-	  
+
 	  void jsonUpdate(xgi::Input* const in, xgi::Output* const out);
 	  void jsonUpdateCore(xgi::Input* const in, xgi::Output* const out);
-      
+
       xoap::MessageReference fireEvent ( xoap::MessageReference msg ) throw ( xoap::exception::Exception );
 
       virtual void onException(xcept::Exception& err);
-      
+
       void readConfigFile();
 
       xdata::String hwCfgString_;
@@ -165,17 +165,18 @@ namespace pixel {
 
       xdata::String statusMsg_;
       log4cplus::Logger& logger_;
-      
+
       // PixelSupervisor
       xdaq::ApplicationDescriptor* PixelSupervisor_;
       bool firstTransition;
-	  
+
 	  std::string appNameAndInstance_;
 	  // The start time of the monitor. Just for a simplistic estimate
       // of the application uptime.
       toolbox::TimeVal timeStart_;
 	  std::string tb_Status_uptime;
-	  
+      std::string tb_Status_timenow;
+
 
     }; // class PixelTCDSSupervisor
   } // namespace tcds
