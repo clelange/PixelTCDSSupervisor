@@ -731,7 +731,6 @@ pixel::tcds::PixelTCDSSupervisor::lostConnection(xgi::Output* out)
 void
 pixel::tcds::PixelTCDSSupervisor::tableConfig(xgi::Output* out)
 {
-	std::string state = fsm_.getStateName (fsm_.getCurrentState());
 	*out<<"<div style=\"float:left;\">\n";
 	*out<<"<h3>CONFIGURATION</h3>\n"
 		<<"<p>Application Configuration.</p>\n";
@@ -746,42 +745,38 @@ pixel::tcds::PixelTCDSSupervisor::tableConfig(xgi::Output* out)
 
 		<<"<tr>\n"
         <<"<td>FSM state</td>\n"
-        <<"<td>"<<state<<"</td>\n"
+        <<"<td id=\"tb_Config_state\">"<<tb_Config_state<<"</td>\n"
 		<<"</tr>\n"
 
 		<<"<tr>\n"
         <<"<td>Connected to TCDS application</td>\n"
-        <<"<td>"<<"class '" << tcdsAppClassName() << "', instance number " << tcdsAppInstance()<<"</td>\n"
+        <<"<td id=\"tb_Config_TCDS\">"<<tb_Config_TCDS<<"</td>\n"
 		<<"</tr>\n"
 
 		<<"<tr>\n"
         <<"<td>Session id</td>\n"
-        <<"<td>"<<"'" << sessionId() << "'"<<"</td>\n"
+        <<"<td id=\"tb_Config_sessionID\">"<<tb_Config_sessionID<<"</td>\n"
 		<<"</tr>\n"
 
 		<<"<tr>\n"
         <<"<td>Hardware lease renewal interval</td>\n"
-        <<"<td>"<< hwLeaseRenewalInterval()<<"</td>\n"
+        <<"<td id=\"tb_Config_renewInteval\">"<< tb_Config_renewInteval<<"</td>\n"
 		<<"</tr>\n"
 
 		<<"<tr>\n"
         <<"<td>Run number</td>\n"
-        <<"<td>"<< runNumber_.toString() << "</td>\n"
+        <<"<td id=\"tb_Config_runNumber\">"<< tb_Config_runNumber << "</td>\n"
 		<<"</tr>\n"
 
 		<<"<tr>\n"
         <<"<td>Hardware configuration file</td>\n"
-        <<"<td>"<< hwCfgFileName_.toString() <<"</td>\n"
+        <<"<td id = \"tb_Config_hardware\">"<< tb_Config_hardware <<"</td>\n"
 		<<"</tr>\n"
 
 		<<"<tr>\n"
-        <<"<td>Last action</td>\n";
-  if (statusMsg_.toString().find("error") != std::string::npos)
-    *out << "<td><font color=\"red\">" << statusMsg_.toString() << "'</font></td>\n";
-  else
-    *out << "<td>'"<<statusMsg_.toString() << "'</td>\n";
-
-	*out<<"</tr>\n"
+        <<"<td>Last action</td>\n"
+		<< "<td id=\"tb_Config_statusMsg\">"<<tb_Config_statusMsg << "</td>\n"
+		<<"</tr>\n"
 
 		<<"</tbody>\n"
 		<<"</table>\n\n";
@@ -857,9 +852,7 @@ pixel::tcds::PixelTCDSSupervisor::tableSOAP(xgi::Output* out)
     }
   *out << "</ul>\n";
 
-  *out<<"<button id=\"EnableButton\" type=\"button\" class=\"btn btn-success active\" onclick=\"buttonClick(this.id)\">Expert Actions</button>\n";
-  *out<<"<button id=\"tmpButton\" type=\"button\" class=\"btn btn-success active\" onclick=\"buttonClick(this.id)\">Tmp btn</button>\n";
-
+  *out<<"<button id=\"ExpertActions\" type=\"button\" class=\"btn btn-success active\" onclick=\"buttonClick(this.id)\">Expert Actions</button>\n";
 
   *out<<"<script type=\"text/javascript\">\n"
 	  <<"defaultState();\n"
@@ -993,12 +986,6 @@ pixel::tcds::PixelTCDSSupervisor::tableBgoString(xgi::Output* out)
 void
 pixel::tcds::PixelTCDSSupervisor::tableStatus(xgi::Output* out)
 {
-toolbox::TimeVal timeNow(toolbox::TimeVal::gettimeofday());
-toolbox::TimeInterval upTime = timeNow - timeStart_;
-tb_Status_uptime = upTime.toString();
-tb_Status_timenow = upTime.toString();
-
-
 *out<<"<table class=\"table table-hover\" style=\"display: inline-block; float: left;\">\n"
 		<<"<thead>\n"
 		<<"<tr>\n"
@@ -1010,43 +997,42 @@ tb_Status_timenow = upTime.toString();
 
 		<<"<tr>\n"
         <<"<td>Application FSM state</td>\n"
-        <<"<td>"<<"aaa"<<"</td>\n"
+        <<"<td id=\"tb_Status_appFSM\">"<<tb_Status_appFSM<<"</td>\n"
 		<<"</tr>\n"
 
 		<<"<tr>\n"
         <<"<td>Application Status</td>\n"
-        <<"<td>"<<"aaa"<<"</td>\n"
+        <<"<td id=\"tb_Status_appstatus\">"<<tb_Status_appstatus<<"</td>\n"
 		<<"</tr>\n"
 
 		<<"<tr>\n"
         <<"<td>Problem Description</td>\n"
-        <<"<td>"<<"aaa"<<"</td>\n"
+        <<"<td id=\"tb_Status_prodesc\">"<<tb_Status_prodesc<<"</td>\n"
 		<<"</tr>\n"
 
 		<<"<tr>\n"
         <<"<td>RunControl session in charge</td>\n"
-        <<"<td>"<<"aaa"<<"</td>\n"
+        <<"<td id=\"tb_Status_runsession\">"<<tb_Status_runsession<<"</td>\n"
 		<<"</tr>\n"
 
 		<<"<tr>\n"
         <<"<td>Application mode</td>\n"
-        <<"<td>"<<"aaa"<<"</td>\n"
+        <<"<td id=\"tb_Status_appmode\">"<<tb_Status_appmode<<"</td>\n"
 		<<"</tr>\n"
 
 		<<"<tr>\n"
         <<"<td>Uptime</td>\n"
-        <<"<td id=\"tb_Status_uptime\">"<<tb_Status_uptime<<"</td>\n";
-		std::cout<<"upTime="<<upTime<<"\n"  ;
-		*out<<"</tr>\n"
+        <<"<td id=\"tb_Status_uptime\">"<<tb_Status_uptime<<"</td>\n"
+		<<"</tr>\n"
 
 		<<"<tr>\n"
         <<"<td>Latest monitoring update time</td>\n"
-        <<"<td id=\"tb_Status_timenow\">"<<tb_Status_timenow<<"</td>\n";
-		*out<<"</tr>\n"
+        <<"<td id=\"tb_Status_timenow\">"<<tb_Status_timenow<<"</td>\n"
+		<<"</tr>\n"
 
 		<<"<tr>\n"
         <<"<td>Latest monitoring update durations (s)</td>\n"
-        <<"<td>"<<"aaa"<<"</td>\n"
+        <<"<td id=\"tb_Status_upduration\">"<<tb_Status_upduration<<"</td>\n"
 		<<"</tr>\n"
 
 		<<"</tbody>\n"
@@ -1057,13 +1043,6 @@ void
 pixel::tcds::PixelTCDSSupervisor::tableRemoteInfo(xgi::Output* out)
 {
 // Remote parameters (i.e., of the remote TCDS control application).
-
-  std::string const hwLeaseOwnerId(tcdsHwLeaseOwnerId_.toString());
-  std::string tmpStr("");
-  if (hwLeaseOwnerId == "")
-    {
-      tmpStr = " (hardware not leased/lease expired)";
-    }
 *out<<"<div style=\"float:left; margin-left:50px\">\n";
 *out<< "<h3>REMOTE INFOMATION</h3>\n"
 	<<"<p>Application Remote Infomation</p>\n";
@@ -1078,12 +1057,12 @@ pixel::tcds::PixelTCDSSupervisor::tableRemoteInfo(xgi::Output* out)
 
 		<<"<tr>\n"
         <<"<td>State</td>\n"
-        <<"<td>"<<tcdsState_.toString()<<"</td>\n"
+        <<"<td id=\"tb_Remote_tcdsState\">"<<tb_Remote_tcdsState<<"</td>\n"
 		<<"</tr>\n"
 
 		<<"<tr>\n"
         <<"<td>Hardware lease owner id</td>\n"
-        <<"<td>"<< "'" << hwLeaseOwnerId << "'" << tmpStr<<"</td>\n"
+        <<"<td id=\"tb_Remote_Hardware\">"<< tb_Remote_Hardware<<"</td>\n"
 		<<"</tr>\n"
 
 		<<"</tbody>\n"
@@ -1438,14 +1417,18 @@ void
 pixel::tcds::PixelTCDSSupervisor::jsonUpdateCore(xgi::Input* const in, xgi::Output* const out)
 {
 
-  	std::string tb_Config_state = fsm_.getStateName (fsm_.getCurrentState());
-  	std::string tb_Config_TCDS = "class '" + tcdsAppClassName() + "', instance number " + std::string(itoa(tcdsAppInstance()));
-  	std::string tb_Config_sessionID = "'" + sessionId() + "'";
-  	std::string tb_Config_renewInteval = hwLeaseRenewalInterval();
-  	std::string tb_Config_runNumber = runNumber_.toString();
-  	std::string tb_Config_hardware = hwCfgFileName_.toString();
-  	std::string tb_Config_statusMsg = statusMsg_.toString();
+  	tb_Config_state = fsm_.getStateName (fsm_.getCurrentState());
+  	tb_Config_TCDS = "class '" + tcdsAppClassName() + "', instance number " + std::string(itoa(tcdsAppInstance()));
+  	tb_Config_sessionID = "'" + sessionId() + "'";
+  	tb_Config_renewInteval = hwLeaseRenewalInterval();
+  	tb_Config_runNumber = runNumber_.toString();
+  	tb_Config_hardware = hwCfgFileName_.toString();
 
+	if (statusMsg_.toString().find("error") != std::string::npos)
+    tb_Config_statusMsg = "<font color=\"red\">" + statusMsg_.toString() + "'</font>";
+  else
+    tb_Config_statusMsg =  "'"+ statusMsg_.toString() + "'";
+	
 
   	std::string const hwLeaseOwnerId(tcdsHwLeaseOwnerId_.toString());
   	std::string tmpStr("");
@@ -1453,8 +1436,8 @@ pixel::tcds::PixelTCDSSupervisor::jsonUpdateCore(xgi::Input* const in, xgi::Outp
     {
         tmpStr = " (hardware not leased/lease expired)";
     }
-  	std::string tb_Remote_tcdsState = tcdsState_.toString();
-  	std::string tb_Remote_Hardware = "'" + hwLeaseOwnerId + "'" + tmpStr;
+  	tb_Remote_tcdsState = tcdsState_.toString();
+  	tb_Remote_Hardware = "'" + hwLeaseOwnerId + "'" + tmpStr;
 
   	toolbox::TimeVal timeNow(toolbox::TimeVal::gettimeofday());
   	toolbox::TimeInterval upTime = timeNow - timeStart_;
@@ -1462,17 +1445,7 @@ pixel::tcds::PixelTCDSSupervisor::jsonUpdateCore(xgi::Input* const in, xgi::Outp
   	tb_Status_uptime = upTime.toString();
     tb_Status_timenow = double(timeNow);
 
-  	/**out<<"<script type=\"text/javascript\" src=\"/pixel/PixelWeb/js/button.js\"></script>\n";
-  	*out<<"<script>\n"
-  	  <<"loopUpdateVariables(\""<<tb_Config_state<<"\",\""<<"abc"<<"\",\""<<tb_Config_sessionID<<"\",\""<<tb_Config_renewInteval<<"\",\""<<tb_Config_runNumber<<"\",\""<<tb_Config_hardware<<"\",\""<<tb_Config_statusMsg<<"\",\""<<tb_Remote_tcdsState<<"\",\""<<tb_Remote_Hardware<<"\",\""<<tb_Status_uptime<<"\");\n"
-  	  <<"</script>\n\n"; */
-
-  	//   out->getHTTPResponseHeader().addHeader("Content-Type", "application/json");
-  	// //   *out << "{ \"upTime\": \"" << tb_Status_uptime << "\"}\n";
-      // *out << "{ \"myStruc\": {";
-      // *out << "\"upTime\": \"bla\"";
-      // *out << "}\n}";
-
+  	
   // Check if the other side supports gzip.
   bool doGZIP = false;
   std::string const acceptEncoding = in->getenv("ACCEPT_ENCODING");
@@ -1485,6 +1458,15 @@ pixel::tcds::PixelTCDSSupervisor::jsonUpdateCore(xgi::Input* const in, xgi::Outp
   std::stringstream tmp("");
   std::string jsonTmp = "\"tb_Status_uptime\" : \"" + tb_Status_uptime + "\"";
   jsonTmp += ",\n\"tb_Status_timenow\" : \"" + tb_Status_timenow + "\"";
+  jsonTmp += ",\n\"tb_Config_state\" : \"" + tb_Config_state + "\"";
+  jsonTmp += ",\n\"tb_Config_TCDS\" : \"" + tb_Config_TCDS + "\"";
+  jsonTmp += ",\n\"tb_Config_sessionID\" : \"" + tb_Config_sessionID + "\"";
+  jsonTmp += ",\n\"tb_Config_renewInteval\" : \"" + tb_Config_renewInteval + "\"";
+  jsonTmp += ",\n\"tb_Config_runNumber\" : \"" + tb_Config_runNumber + "\"";
+  jsonTmp += ",\n\"tb_Config_hardware\" : \"" + tb_Config_hardware + "\"";
+  jsonTmp += ",\n\"tb_Config_statusMsg\" : \"" + tb_Config_statusMsg + "\"";
+  jsonTmp += ",\n\"tb_Remote_tcdsState\" : \"" + tb_Remote_tcdsState + "\"";
+  jsonTmp += ",\n\"tb_Remote_Hardware\" : \"" + tb_Remote_Hardware + "\"";
   if (!jsonTmp.empty())
     {
       if (!tmp.str().empty())
