@@ -118,7 +118,6 @@ namespace pixel {
 	  void tableStatus(xgi::Output* out);
 	  void tableRemoteInfo(xgi::Output* out);
 	  void tableLogConfig(xgi::Output* out);
-	  void updateVariables(xgi::Output* out);
 
 
       void queryFSMState(xgi::Input* in, xgi::Output* out);

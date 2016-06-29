@@ -661,7 +661,7 @@ pixel::tcds::PixelTCDSSupervisor::mainPage(xgi::Input* in, xgi::Output* out)
 
   loadWaitScreen(out);
   lostConnection(out);
-  //updateVariables(out);
+  
 	*out<<"<link href=\"/pixel/PixelWeb/css/bootstrap.css\" rel=\"stylesheet\">\n\n";
 	*out<<"<script type=\"text/javascript\" src=\"/pixel/PixelWeb/js/bootstrap.js\"></script>\n";
 
@@ -857,13 +857,6 @@ pixel::tcds::PixelTCDSSupervisor::tableSOAP(xgi::Output* out)
   *out<<"<script type=\"text/javascript\">\n"
 	  <<"defaultState();\n"
 	  <<"</script>\n\n";
-}
-
-
-void
-pixel::tcds::PixelTCDSSupervisor::updateVariables(xgi::Output* out)
-{
-
 }
 
 
@@ -1073,10 +1066,10 @@ pixel::tcds::PixelTCDSSupervisor::tableRemoteInfo(xgi::Output* out)
 void
 pixel::tcds::PixelTCDSSupervisor::tableLogConfig(xgi::Output* out)
 {
-	*out<<"<div style=\"display: inline-block;\">\n"
+	*out<<"<div id = \"hard-config\" style=\"display: inline-block;\">\n"
 		<<"<h4>Hardware Configuration</h4>\n"
 		<<"<textarea rows=\"5\" cols=\"50\" height=\"10\" readonly = \"true\">\n"
-		<<hwCfgString_.toString()
+		<< hwCfgString_.toString()
 		<<"</textarea>"
 		<<"</div>\n";
 }
