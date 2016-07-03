@@ -658,7 +658,8 @@ pixel::tcds::PixelTCDSSupervisor::mainPage(xgi::Input* in, xgi::Output* out)
 {
   // Local parameters (i.e., of this XDAQ application).
   //*out << "<h1>Local XDAQ: information</h1>\n\n";
-
+ 
+	  
   loadWaitScreen(out);
   lostConnection(out);
   
@@ -670,16 +671,8 @@ pixel::tcds::PixelTCDSSupervisor::mainPage(xgi::Input* in, xgi::Output* out)
 	  <<"$(window).onload = loadWin();\n"
 	  <<"</script>\n\n";
 
-
   tabPresentation(out);
-
-
-
   tableSOAP(out);
-
-
-	 std::cout<<tam<<"\n";
-	 tam = tam+1;
 }
 
 void
@@ -703,18 +696,10 @@ pixel::tcds::PixelTCDSSupervisor::loadWaitScreen(xgi::Output* out)
       <<"window.loading_screen = window.pleaseWait({\n"
       <<"logo: \"/pixel/PixelWeb/icons/pixelici_icon.png\",\n"
       <<"backgroundColor: '#f46d3b',\n"
-      <<"loadingHtml: \"<p class='loading-message'>Loading "<<appNameAndInstance_<<"</p><div class='sk-spinner sk-spinner-wave'><div class='sk-rect1'></div><div class='sk-rect2'></div><div class='sk-rect3'></div><div class='sk-rect4'></div><div class='sk-rect5'></div></div>\"\n"
+	  <<"loadingHtml: \"<p class='loading-message'>Loading "<<appNameAndInstance_<<"<div class=\'sk-rotating-plane\'></div>\"\n"
       <<"});\n"
 	  <<"$(document).ready(loading_screen.finish());\n"
 	  <<"</script>\n\n";
-
-
- /* *out<<"<div class=\"spinner\">\n"
-	  <<"<div class=\"double-bounce1\"></div>\n"
-	  <<"<div class=\"double-bounce2\"></div>\n"
-	  <<"</div>\"\n"; */
-  //*out<<" <div class=\"sk-rotating-plane\"></div>\n";
-
 }
 
 void
@@ -1025,7 +1010,7 @@ pixel::tcds::PixelTCDSSupervisor::tableStatus(xgi::Output* out)
 
 		<<"<tr>\n"
         <<"<td>Latest monitoring update durations (s)</td>\n"
-        <<"<td id=\"tb_Status_upduration\">"<<tb_Status_upduration<<"</td>\n"
+        <<"<td id=\"tb_Status_latestMonitoringDuration\">"<<tb_Status_latestMonitoringDuration<<"</td>\n"
 		<<"</tr>\n"
 
 		<<"</tbody>\n"
@@ -1409,7 +1394,8 @@ pixel::tcds::PixelTCDSSupervisor::jsonUpdate(xgi::Input* const in, xgi::Output* 
 void
 pixel::tcds::PixelTCDSSupervisor::jsonUpdateCore(xgi::Input* const in, xgi::Output* const out)
 {
-
+	toolbox::TimeInterval timeBegin(toolbox::TimeVal::gettimeofday());
+	
   	tb_Config_state = fsm_.getStateName (fsm_.getCurrentState());
   	tb_Config_TCDS = "class '" + tcdsAppClassName() + "', instance number " + std::string(itoa(tcdsAppInstance()));
   	tb_Config_sessionID = "'" + sessionId() + "'";
@@ -1429,15 +1415,24 @@ pixel::tcds::PixelTCDSSupervisor::jsonUpdateCore(xgi::Input* const in, xgi::Outp
     {
         tmpStr = " (hardware not leased/lease expired)";
     }
+	queryFSMStateAction();
+	queryHwLeaseOwnerAction();
+	
   	tb_Remote_tcdsState = tcdsState_.toString();
   	tb_Remote_Hardware = "'" + hwLeaseOwnerId + "'" + tmpStr;
 
   	toolbox::TimeVal timeNow(toolbox::TimeVal::gettimeofday());
-  	toolbox::TimeInterval upTime = timeNow - timeStart_;
+	toolbox::TimeInterval upTime = timeNow - timeStart_;
+	toolbox::TimeInterval upTime_now = timeNow;
+
 
   	tb_Status_uptime = upTime.toString();
-    tb_Status_timenow = double(timeNow);
-
+    tb_Status_timenow = upTime_now.toString();
+	//std::cout<<"timeNow="<<timeNow<<std::endl;
+	
+	toolbox::TimeInterval timeEnd(toolbox::TimeVal::gettimeofday());
+	
+	tb_Status_latestMonitoringDuration = (timeEnd - timeBegin).toString();
   	
   // Check if the other side supports gzip.
   bool doGZIP = false;
@@ -1449,9 +1444,10 @@ pixel::tcds::PixelTCDSSupervisor::jsonUpdateCore(xgi::Input* const in, xgi::Outp
 
   // Prepare the actual JSON contents.
   std::stringstream tmp("");
-  std::string jsonTmp = "\"tb_Status_uptime\" : \"" + tb_Status_uptime + "\"";
+  std::string jsonTmp = "\"tb_Config_state\" : \"" + tb_Config_state + "\"";
   jsonTmp += ",\n\"tb_Status_timenow\" : \"" + tb_Status_timenow + "\"";
-  jsonTmp += ",\n\"tb_Config_state\" : \"" + tb_Config_state + "\"";
+  jsonTmp += ",\n\"tb_Status_latestMonitoringDuration\" : \"" + tb_Status_latestMonitoringDuration + "\"";
+  jsonTmp += ",\n\"tb_Status_uptime\" : \"" + tb_Status_uptime + "\"";
   jsonTmp += ",\n\"tb_Config_TCDS\" : \"" + tb_Config_TCDS + "\"";
   jsonTmp += ",\n\"tb_Config_sessionID\" : \"" + tb_Config_sessionID + "\"";
   jsonTmp += ",\n\"tb_Config_renewInteval\" : \"" + tb_Config_renewInteval + "\"";
@@ -1485,6 +1481,8 @@ pixel::tcds::PixelTCDSSupervisor::jsonUpdateCore(xgi::Input* const in, xgi::Outp
   //   {
       *out << jsonContents;
     // }
+	
+	
 }
 
 void
