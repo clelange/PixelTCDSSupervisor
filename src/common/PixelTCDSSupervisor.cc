@@ -1404,7 +1404,7 @@ pixel::tcds::PixelTCDSSupervisor::jsonUpdateCore(xgi::Input* const in, xgi::Outp
   	tb_Config_hardware = hwCfgFileName_.toString();
 
 	if (statusMsg_.toString().find("error") != std::string::npos)
-    tb_Config_statusMsg = "<font color=\"red\">" + statusMsg_.toString() + "'</font>";
+    tb_Config_statusMsg = "<font color=\"red\">" + statusMsg_.toString() + "</font>";
   else
     tb_Config_statusMsg =  "'"+ statusMsg_.toString() + "'";
 	
