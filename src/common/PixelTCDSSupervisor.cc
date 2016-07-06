@@ -65,7 +65,9 @@ try
     std::ostringstream oss;
     oss << getApplicationDescriptor()->getClassName() << getApplicationDescriptor()->getInstance();
 	appNameAndInstance_ = oss.str();
-
+	std::ostringstream oss2;
+    oss2 << getApplicationDescriptor()->getClassName() << " instance " <<getApplicationDescriptor()->getInstance();
+	appNamePlusInstance_= oss2.str();
     // Binding of the main HyperDAQ page.
     xgi::framework::deferredbind(this, this, &pixel::tcds::PixelTCDSSupervisor::mainPage, "Default");
 
@@ -696,7 +698,7 @@ pixel::tcds::PixelTCDSSupervisor::loadWaitScreen(xgi::Output* out)
       <<"window.loading_screen = window.pleaseWait({\n"
       <<"logo: \"/pixel/PixelWeb/icons/pixelici_icon.png\",\n"
       <<"backgroundColor: '#f46d3b',\n"
-	  <<"loadingHtml: \"<p class='loading-message'>Loading "<<appNameAndInstance_<<"<div class=\'sk-rotating-plane\'></div>\"\n"
+	  <<"loadingHtml: \"<p class='loading-message'><font color='white' size='4'>Loading "<<appNamePlusInstance_<<"</font><div class=\'sk-rotating-plane\'></div>\"\n"
       <<"});\n"
 	  <<"$(document).ready(loading_screen.finish());\n"
 	  <<"</script>\n\n";
@@ -719,7 +721,7 @@ pixel::tcds::PixelTCDSSupervisor::tableConfig(xgi::Output* out)
 	*out<<"<div style=\"float:left;\">\n";
 	*out<<"<h3>CONFIGURATION</h3>\n"
 		<<"<p>Application Configuration.</p>\n";
-	*out<<"<table class=\"table table-hover\" style=\"display: inline-block; float: left;\">\n"
+	*out<<"<table class=\"table table-hover\" style=\"display: inline-block; float: left; width: 600px\">\n"
 		<<"<thead>\n"
 		<<"<tr>\n"
         <<"<th>Setting</th>\n"
@@ -1063,7 +1065,7 @@ pixel::tcds::PixelTCDSSupervisor::tabPresentation(xgi::Output* out)
 {
 
 	*out<<"<div class=\"container\">\n"
-		<<"<h2>Local XDAQ: information</h2>\n"
+		<<"<h2>"<<appNamePlusInstance_<<"</h2>\n"
 		<<"<ul class=\"nav nav-tabs\">\n"
 		<<"<li class=\"active\"><a data-toggle=\"tab\" href=\"#home\">Configuration</a></li>\n"
 		<<"<li><a data-toggle=\"tab\" href=\"#menu1\">Application Status</a></li>\n"
@@ -1391,6 +1393,43 @@ pixel::tcds::PixelTCDSSupervisor::jsonUpdate(xgi::Input* const in, xgi::Output* 
 }
 
 
+std::string pixel::tcds::PixelTCDSSupervisor::formatTimestamp(toolbox::TimeVal const timestamp)
+{
+  return toolbox::TimeVal(timestamp).toString("%Y-%m-%d %H:%M:%S UTC",
+                                              toolbox::TimeVal::gmt);
+}
+
+std::string pixel::tcds::PixelTCDSSupervisor::formatDeltaTString(toolbox::TimeVal const timeBegin, toolbox::TimeVal const timeEnd)
+{
+	std::stringstream result;
+  toolbox::TimeVal deltaT = timeEnd - timeBegin;
+  if (deltaT.sec() != 0)
+    {
+      result << deltaT.sec() << " second";
+      if(deltaT.sec() > 1)
+        {
+          result << "s";
+        }
+    }
+  if (deltaT.millisec() != 0)
+    {
+      if (result.str().size() != 0)
+        {
+          result << " and ";
+        }
+      result << deltaT.millisec() << " millisecond";
+      if (deltaT.millisec() > 1)
+        {
+          result << "s";
+        }
+    }
+  if (result.str().size() == 0)
+    {
+      result << "negligible time";
+    }
+  return result.str();
+
+}
 void
 pixel::tcds::PixelTCDSSupervisor::jsonUpdateCore(xgi::Input* const in, xgi::Output* const out)
 {
@@ -1404,7 +1443,7 @@ pixel::tcds::PixelTCDSSupervisor::jsonUpdateCore(xgi::Input* const in, xgi::Outp
   	tb_Config_hardware = hwCfgFileName_.toString();
 
 	if (statusMsg_.toString().find("error") != std::string::npos)
-    tb_Config_statusMsg = "<font color=\"red\">" + statusMsg_.toString() + "</font>";
+    tb_Config_statusMsg = "<font color='red'>" + statusMsg_.toString() + "</font>";
   else
     tb_Config_statusMsg =  "'"+ statusMsg_.toString() + "'";
 	
@@ -1425,14 +1464,13 @@ pixel::tcds::PixelTCDSSupervisor::jsonUpdateCore(xgi::Input* const in, xgi::Outp
 	toolbox::TimeInterval upTime = timeNow - timeStart_;
 	toolbox::TimeInterval upTime_now = timeNow;
 
-
-  	tb_Status_uptime = upTime.toString();
-    tb_Status_timenow = upTime_now.toString();
+  	tb_Status_uptime = formatDeltaTString(timeStart_, timeNow);//.toString();
+    tb_Status_timenow = formatTimestamp(timeNow);
 	//std::cout<<"timeNow="<<timeNow<<std::endl;
 	
 	toolbox::TimeInterval timeEnd(toolbox::TimeVal::gettimeofday());
 	
-	tb_Status_latestMonitoringDuration = (timeEnd - timeBegin).toString();
+	tb_Status_latestMonitoringDuration = formatDeltaTString(timeBegin, timeEnd);
   	
   // Check if the other side supports gzip.
   bool doGZIP = false;

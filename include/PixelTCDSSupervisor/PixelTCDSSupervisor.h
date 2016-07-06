@@ -149,6 +149,8 @@ namespace pixel {
 	  void jsonUpdateCore(xgi::Input* const in, xgi::Output* const out);
 	  
 
+	  std::string formatTimestamp(toolbox::TimeVal const timestamp);
+	  std::string formatDeltaTString(toolbox::TimeVal const timeBegin, toolbox::TimeVal const timeEnd);
       xoap::MessageReference fireEvent ( xoap::MessageReference msg ) throw ( xoap::exception::Exception );
 
       virtual void onException(xcept::Exception& err);
@@ -172,6 +174,7 @@ namespace pixel {
       bool firstTransition;
 
 	  std::string appNameAndInstance_;
+	  std::string appNamePlusInstance_;
 	  // The start time of the monitor. Just for a simplistic estimate
       // of the application uptime.
       toolbox::TimeVal timeStart_;
