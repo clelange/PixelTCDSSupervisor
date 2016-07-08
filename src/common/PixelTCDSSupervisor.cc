@@ -944,7 +944,7 @@ pixel::tcds::PixelTCDSSupervisor::tableBgoString(xgi::Output* out)
   *out << cgicc::input().set("type","text")
           .set("name", "FileNameString")
           .set("size", "100").set("value",hwCfgFileName_) << std::endl;
-  *out << cgicc::input().set("type","submit").set("value","Send") << std::endl; *out << cgicc::form() << std::endl;
+  *out << cgicc::input().set("type","submit").set("value","aaa") << std::endl; *out << cgicc::form() << std::endl;
   *out << cgicc::fieldset();
 
   // form for UpdateHardwareConfiguration
@@ -1011,7 +1011,7 @@ pixel::tcds::PixelTCDSSupervisor::tableStatus(xgi::Output* out)
 		<<"</tr>\n"
 
 		<<"<tr>\n"
-        <<"<td>Latest monitoring update durations (s)</td>\n"
+        <<"<td>Latest monitoring update durations</td>\n"
         <<"<td id=\"tb_Status_latestMonitoringDuration\">"<<tb_Status_latestMonitoringDuration<<"</td>\n"
 		<<"</tr>\n"
 
@@ -1055,8 +1055,8 @@ pixel::tcds::PixelTCDSSupervisor::tableLogConfig(xgi::Output* out)
 {
 	*out<<"<div id = \"hard-config\" style=\"display: inline-block;\">\n"
 		<<"<h4>Hardware Configuration</h4>\n"
-		<<"<textarea rows=\"5\" cols=\"50\" height=\"10\" readonly = \"true\">\n"
-		<< hwCfgString_.toString()
+		<<"<textarea id = \"tb_Hardware_Configuration\" rows=\"5\" cols=\"50\" height=\"10\" readonly = \"true\">\n"
+		<< tb_Hardware_Configuration
 		<<"</textarea>"
 		<<"</div>\n";
 }
@@ -1441,6 +1441,9 @@ pixel::tcds::PixelTCDSSupervisor::jsonUpdateCore(xgi::Input* const in, xgi::Outp
   	tb_Config_renewInteval = hwLeaseRenewalInterval();
   	tb_Config_runNumber = runNumber_.toString();
   	tb_Config_hardware = hwCfgFileName_.toString();
+	tb_Hardware_Configuration = hwCfgString_.toString();
+	tb_Hardware_Configuration = tb_Hardware_Configuration.substr(1,tb_Hardware_Configuration.length()-2);
+	
 
 	if (statusMsg_.toString().find("error") != std::string::npos)
     tb_Config_statusMsg = "<font color='red'>" + statusMsg_.toString() + "</font>";
@@ -1464,7 +1467,7 @@ pixel::tcds::PixelTCDSSupervisor::jsonUpdateCore(xgi::Input* const in, xgi::Outp
 	toolbox::TimeInterval upTime = timeNow - timeStart_;
 	toolbox::TimeInterval upTime_now = timeNow;
 
-  	tb_Status_uptime = formatDeltaTString(timeStart_, timeNow);//.toString();
+  	tb_Status_uptime = upTime.toString();
     tb_Status_timenow = formatTimestamp(timeNow);
 	//std::cout<<"timeNow="<<timeNow<<std::endl;
 	
@@ -1494,6 +1497,9 @@ pixel::tcds::PixelTCDSSupervisor::jsonUpdateCore(xgi::Input* const in, xgi::Outp
   jsonTmp += ",\n\"tb_Config_statusMsg\" : \"" + tb_Config_statusMsg + "\"";
   jsonTmp += ",\n\"tb_Remote_tcdsState\" : \"" + tb_Remote_tcdsState + "\"";
   jsonTmp += ",\n\"tb_Remote_Hardware\" : \"" + tb_Remote_Hardware + "\"";
+  jsonTmp += ",\n\"tb_Hardware_Configuration\" : \"" + tb_Hardware_Configuration + "\"";
+  
+  
   if (!jsonTmp.empty())
     {
       if (!tmp.str().empty())

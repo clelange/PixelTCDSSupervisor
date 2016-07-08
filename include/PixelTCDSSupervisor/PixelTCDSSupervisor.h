@@ -181,6 +181,7 @@ namespace pixel {
 	  std::string tb_Status_uptime, tb_Status_timenow, tb_Status_appFSM, tb_Status_appstatus, tb_Status_prodesc, tb_Status_runsession, tb_Status_appmode, tb_Status_latestMonitoringDuration;
 		std::string tb_Config_state, tb_Config_TCDS, tb_Config_sessionID, tb_Config_renewInteval, tb_Config_runNumber, tb_Config_hardware, tb_Config_statusMsg;
 		std::string tb_Remote_tcdsState, tb_Remote_Hardware;
+		std::string tb_Hardware_Configuration;
 
     }; // class PixelTCDSSupervisor
   } // namespace tcds
