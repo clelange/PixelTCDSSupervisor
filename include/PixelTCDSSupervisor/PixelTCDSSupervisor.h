@@ -21,7 +21,7 @@
 #include "toolbox/TimeInterval.h"
 #include "toolbox/TimeVal.h"
 #include "string.h"
-
+//#include "map"
 
 namespace log4cplus {
   class Logger;
@@ -119,7 +119,8 @@ namespace pixel {
 	  void tableStatus(xgi::Output* out);
 	  void tableRemoteInfo(xgi::Output* out);
 	  void tableLogConfig(xgi::Output* out);
-
+	  
+	  void printLine(xgi::Output* out, std::string nameText, std::string nameID);
 
       void queryFSMState(xgi::Input* in, xgi::Output* out);
       void queryHwLeaseOwner(xgi::Input* in, xgi::Output* out);
@@ -182,6 +183,7 @@ namespace pixel {
 		std::string tb_Config_state, tb_Config_TCDS, tb_Config_sessionID, tb_Config_renewInteval, tb_Config_runNumber, tb_Config_hardware, tb_Config_statusMsg;
 		std::string tb_Remote_tcdsState, tb_Remote_Hardware;
 		std::string tb_Hardware_Configuration;
+		//std::map < std::string, std::string > allVariables;
 
     }; // class PixelTCDSSupervisor
   } // namespace tcds

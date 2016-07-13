@@ -677,6 +677,16 @@ pixel::tcds::PixelTCDSSupervisor::mainPage(xgi::Input* in, xgi::Output* out)
   tableSOAP(out);
 }
 
+void 
+pixel::tcds::PixelTCDSSupervisor::printLine(xgi::Output* out, std::string nameText, std::string nameID){
+	std::string idString = "<td id=\"" + nameID + "\">";
+	
+	*out<<"<tr>\n"
+        <<"<td>"<<nameText<<"</td>\n"
+        <<idString<< (nameID)<<"</td>\n"
+		<<"</tr>\n";
+} 
+
 void
 pixel::tcds::PixelTCDSSupervisor::redirect(xgi::Input* in, xgi::Output* out)
 {
@@ -728,47 +738,21 @@ pixel::tcds::PixelTCDSSupervisor::tableConfig(xgi::Output* out)
         <<"<th>Status</th>\n"
 		<<"</tr>\n"
 		<<"</thead>\n"
-		<<"<tbody>\n"
+		<<"<tbody>\n";
+		printLine(out, "FSM state", "tb_Config_state");
+		printLine(out, "Connected to TCDS application", "tb_Config_TCDS");
+		printLine(out, "tb_Config_sessionID", "tb_Config_sessionID");
+		printLine(out, "Hardware lease renewal interval", "tb_Config_renewInteval");
+		printLine(out, "Run number", "tb_Config_runNumber");
+		printLine(out, "Hardware configuration file", "tb_Config_hardware");
+		printLine(out, "Last action", "tb_Config_statusMsg");
 
-		<<"<tr>\n"
-        <<"<td>FSM state</td>\n"
-        <<"<td id=\"tb_Config_state\">"<<tb_Config_state<<"</td>\n"
-		<<"</tr>\n"
-
-		<<"<tr>\n"
-        <<"<td>Connected to TCDS application</td>\n"
-        <<"<td id=\"tb_Config_TCDS\">"<<tb_Config_TCDS<<"</td>\n"
-		<<"</tr>\n"
-
-		<<"<tr>\n"
-        <<"<td>Session id</td>\n"
-        <<"<td id=\"tb_Config_sessionID\">"<<tb_Config_sessionID<<"</td>\n"
-		<<"</tr>\n"
-
-		<<"<tr>\n"
-        <<"<td>Hardware lease renewal interval</td>\n"
-        <<"<td id=\"tb_Config_renewInteval\">"<< tb_Config_renewInteval<<"</td>\n"
-		<<"</tr>\n"
-
-		<<"<tr>\n"
-        <<"<td>Run number</td>\n"
-        <<"<td id=\"tb_Config_runNumber\">"<< tb_Config_runNumber << "</td>\n"
-		<<"</tr>\n"
-
-		<<"<tr>\n"
-        <<"<td>Hardware configuration file</td>\n"
-        <<"<td id = \"tb_Config_hardware\">"<< tb_Config_hardware <<"</td>\n"
-		<<"</tr>\n"
-
-		<<"<tr>\n"
-        <<"<td>Last action</td>\n"
-		<< "<td id=\"tb_Config_statusMsg\">"<<tb_Config_statusMsg << "</td>\n"
-		<<"</tr>\n"
-
-		<<"</tbody>\n"
+	*out<<"</tbody>\n"
 		<<"</table>\n\n";
 	*out<<"</div>\n";
 }
+
+
 
 void
 pixel::tcds::PixelTCDSSupervisor::tableHistory(xgi::Output* out)
@@ -811,11 +795,13 @@ pixel::tcds::PixelTCDSSupervisor::tableSOAP(xgi::Output* out)
   commands.push_back("Halt");
   commands.push_back("ColdReset");
   commands.push_back("Reset");
-  commands.push_back("TTCResync");
-  commands.push_back("TTCHardReset");
-  commands.push_back("RenewHardwareLease");
-  commands.push_back("ReadHardwareConfiguration");
-  commands.push_back("SendL1A");
+  
+  std::vector<std::string> commands2;
+  commands2.push_back("TTCResync");
+  commands2.push_back("TTCHardReset");
+  commands2.push_back("RenewHardwareLease");
+  commands2.push_back("ReadHardwareConfiguration");
+  commands2.push_back("SendL1A");
 
   *out << "<ul>\n";
 
@@ -836,6 +822,17 @@ pixel::tcds::PixelTCDSSupervisor::tableSOAP(xgi::Output* out)
       *out << "<button href=\""
            << url << "/" << urn << "/" << *cmd
            << "\" class=\"btn btn-primary\" id=\""<<*cmd<<"\" onclick=\"buttonClick(this.id)\" style=\"margin-left:10px; margin-top:20px\" type=\"button\" >" << *cmd << "</button>\n";
+    }
+  *out << "</ul>\n";
+  
+  *out << "<ul>\n";
+  for (std::vector<std::string>::const_iterator cmd = commands2.begin();
+       cmd != commands2.end();
+       ++cmd)
+    {
+      *out << "<button href=\""
+           << url << "/" << urn << "/" << *cmd
+           << "\" class=\"btn btn-info\" id=\""<<*cmd<<"\" onclick=\"buttonClick(this.id)\" style=\"margin-left:10px; margin-top:20px\" type=\"button\" >" << *cmd << "</button>\n";
     }
   *out << "</ul>\n";
 
@@ -973,49 +970,18 @@ pixel::tcds::PixelTCDSSupervisor::tableStatus(xgi::Output* out)
         <<"<th>Status</th>\n"
 		<<"</tr>\n"
 		<<"</thead>\n"
-		<<"<tbody>\n"
+		<<"<tbody>\n";
 
-		<<"<tr>\n"
-        <<"<td>Application FSM state</td>\n"
-        <<"<td id=\"tb_Status_appFSM\">"<<tb_Status_appFSM<<"</td>\n"
-		<<"</tr>\n"
-
-		<<"<tr>\n"
-        <<"<td>Application Status</td>\n"
-        <<"<td id=\"tb_Status_appstatus\">"<<tb_Status_appstatus<<"</td>\n"
-		<<"</tr>\n"
-
-		<<"<tr>\n"
-        <<"<td>Problem Description</td>\n"
-        <<"<td id=\"tb_Status_prodesc\">"<<tb_Status_prodesc<<"</td>\n"
-		<<"</tr>\n"
-
-		<<"<tr>\n"
-        <<"<td>RunControl session in charge</td>\n"
-        <<"<td id=\"tb_Status_runsession\">"<<tb_Status_runsession<<"</td>\n"
-		<<"</tr>\n"
-
-		<<"<tr>\n"
-        <<"<td>Application mode</td>\n"
-        <<"<td id=\"tb_Status_appmode\">"<<tb_Status_appmode<<"</td>\n"
-		<<"</tr>\n"
-
-		<<"<tr>\n"
-        <<"<td>Uptime</td>\n"
-        <<"<td id=\"tb_Status_uptime\">"<<tb_Status_uptime<<"</td>\n"
-		<<"</tr>\n"
-
-		<<"<tr>\n"
-        <<"<td>Latest monitoring update time</td>\n"
-        <<"<td id=\"tb_Status_timenow\">"<<tb_Status_timenow<<"</td>\n"
-		<<"</tr>\n"
-
-		<<"<tr>\n"
-        <<"<td>Latest monitoring update durations</td>\n"
-        <<"<td id=\"tb_Status_latestMonitoringDuration\">"<<tb_Status_latestMonitoringDuration<<"</td>\n"
-		<<"</tr>\n"
-
-		<<"</tbody>\n"
+		printLine(out, "Application FSM state", "tb_Status_appFSM");
+		printLine(out, "Application Status", "tb_Status_appstatus");
+		printLine(out, "Problem Description", "tb_Status_prodesc");
+		printLine(out, "RunControl session in charge", "tb_Status_runsession");
+		printLine(out, "Application mode", "tb_Status_appmode");
+		printLine(out, "Uptime", "tb_Status_uptime");
+		printLine(out, "Latest monitoring update time", "tb_Status_timenow");
+		printLine(out, "Latest monitoring update durations", "tb_Status_latestMonitoringDuration");
+		
+	*out<<"</tbody>\n"
 		<<"</table>\n\n";
 }
 
@@ -1033,21 +999,14 @@ pixel::tcds::PixelTCDSSupervisor::tableRemoteInfo(xgi::Output* out)
         <<"<th>Status</th>\n"
 		<<"</tr>\n"
 		<<"</thead>\n"
-		<<"<tbody>\n"
+		<<"<tbody>\n";
 
-		<<"<tr>\n"
-        <<"<td>State</td>\n"
-        <<"<td id=\"tb_Remote_tcdsState\">"<<tb_Remote_tcdsState<<"</td>\n"
-		<<"</tr>\n"
+		printLine(out, "State", "tb_Remote_tcdsState");
+		printLine(out, "Hardware lease owner id", "tb_Remote_Hardware");
 
-		<<"<tr>\n"
-        <<"<td>Hardware lease owner id</td>\n"
-        <<"<td id=\"tb_Remote_Hardware\">"<< tb_Remote_Hardware<<"</td>\n"
-		<<"</tr>\n"
-
-		<<"</tbody>\n"
-		<<"</table>\n\n";
-	*out<<"</div>\n";
+	*out<<"</tbody>\n"
+		<<"</table>\n\n"
+		<<"</div>\n";
 }
 
 void
@@ -1070,7 +1029,6 @@ pixel::tcds::PixelTCDSSupervisor::tabPresentation(xgi::Output* out)
 		<<"<li class=\"active\"><a data-toggle=\"tab\" href=\"#home\">Configuration</a></li>\n"
 		<<"<li><a data-toggle=\"tab\" href=\"#menu1\">Application Status</a></li>\n"
 		<<"<li><a data-toggle=\"tab\" href=\"#menu2\">Expert Actions</a></li>\n"
-		<<"<li><a data-toggle=\"tab\" href=\"#menu3\">Menu3</a></li>\n"
 		<<"</ul>\n\n"
 		<<"<div class=\"tab-content\">\n"
 		<<"<div id=\"home\" class=\"tab-pane fade in active\">\n"
@@ -1097,11 +1055,7 @@ pixel::tcds::PixelTCDSSupervisor::tabPresentation(xgi::Output* out)
 		<<"<h3>EXPERTS ACTIONS</h3>\n"
 		<<"<p>Expert Actions.</p>\n";
 	tableBgoString(out);
-	*out<<"</div>\n"
-		<<"<div id=\"menu3\" class=\"tab-pane fade\">\n"
-		<<"<h3>Menu 3</h3>\n"
-		<<"<p>cc.</p>\n"
-		<<"</div>\n</div>\n</div>\n\n";
+	*out<<"</div>\n</div>\n</div>\n\n";
 }
 
 void
@@ -1442,7 +1396,8 @@ pixel::tcds::PixelTCDSSupervisor::jsonUpdateCore(xgi::Input* const in, xgi::Outp
   	tb_Config_runNumber = runNumber_.toString();
   	tb_Config_hardware = hwCfgFileName_.toString();
 	tb_Hardware_Configuration = hwCfgString_.toString();
-	tb_Hardware_Configuration = tb_Hardware_Configuration.substr(1,tb_Hardware_Configuration.length()-2);
+	std::replace( tb_Hardware_Configuration.begin(), tb_Hardware_Configuration.end(), '"', '@');
+	std::replace( tb_Hardware_Configuration.begin(), tb_Hardware_Configuration.end(), '\n', '<');
 	
 
 	if (statusMsg_.toString().find("error") != std::string::npos)
