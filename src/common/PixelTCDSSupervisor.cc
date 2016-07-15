@@ -161,8 +161,7 @@ try
     // make sure no PixelSupervisor remains
     PixelSupervisor_ = 0;
     firstTransition = true;
-
-
+	
   }
 catch (xcept::Exception const& err)
   {
@@ -879,10 +878,11 @@ pixel::tcds::PixelTCDSSupervisor::tableBgoString(xgi::Output* out)
   // form for B-go string sending
   std::string sendBgoStringMethod =
             toolbox::toString("/%s/SendBgoString",urn.c_str());
+	sendBgoStringMethod = "javascript:expertFunction('" + sendBgoStringMethod+"')";
   *out << cgicc::fieldset().set("style","font-size: 10pt; font-family: arial;");
           *out << std::endl;
           *out << cgicc::legend("Set B-go string to send") << cgicc::p() << std::endl;
-  *out << cgicc::form().set("method","GET").set("action", sendBgoStringMethod) << std::endl;
+  *out << cgicc::form().set("ID","formSendBgoString").set("method","GET").set("action", sendBgoStringMethod) << std::endl;
   *out << "<select name=\"CommandString\">" << std::endl;
   for (unsigned int i = 0; i < bgoCommands.size(); ++i) {
     *out << "<option value=\"" << bgoCommands.at(i) << "\">" << bgoCommands.at(i) << std::endl;
@@ -893,10 +893,11 @@ pixel::tcds::PixelTCDSSupervisor::tableBgoString(xgi::Output* out)
   // form for B-go train sending
   std::string sendBgoTrainMethod =
             toolbox::toString("/%s/SendBgoTrain",urn.c_str());
+	sendBgoTrainMethod = "javascript:expertFunction('" + sendBgoTrainMethod+"')";
   *out << cgicc::fieldset().set("style","font-size: 10pt; font-family: arial;");
           *out << std::endl;
           *out << cgicc::legend("Set B-go train string to send") << cgicc::p() << std::endl;
-  *out << cgicc::form().set("method","GET").set("action", sendBgoTrainMethod) << std::endl;
+  *out << cgicc::form().set("ID","formSendBgoTrain").set("method","GET").set("action", sendBgoTrainMethod) << std::endl;
   *out << "<select name=\"TrainString\">" << std::endl;
   for (unsigned int i = 0; i < bgoTrains.size(); ++i) {
     *out << "<option value=\"" << bgoTrains.at(i) << "\">" << bgoTrains.at(i) << std::endl;
@@ -907,10 +908,12 @@ pixel::tcds::PixelTCDSSupervisor::tableBgoString(xgi::Output* out)
   // form for B-go int sending
   std::string sendBgoMethod =
             toolbox::toString("/%s/SendBgo",urn.c_str());
+
+	sendBgoMethod = "javascript:expertFunction('" + sendBgoMethod+"')";
   *out << cgicc::fieldset().set("style","font-size: 10pt; font-family: arial;");
           *out << std::endl;
           *out << cgicc::legend("Set B-go unsigned integer to send") << cgicc::p() << std::endl;
-  *out << cgicc::form().set("method","GET").set("action", sendBgoMethod) << std::endl;
+  *out << cgicc::form().set("ID","formSendBgoMethod").set("method","GET").set("action", sendBgoMethod) << std::endl;
   *out << "<select name=\"CommandUInt\">" << std::endl;
   for (unsigned int bgoNumber = 0; bgoNumber <= 15; ++bgoNumber) {
     *out << "<option value=\"" << bgoNumber << "\">" << bgoNumber << std::endl;
@@ -921,10 +924,11 @@ pixel::tcds::PixelTCDSSupervisor::tableBgoString(xgi::Output* out)
   // form for EnableRandomTriggers uint sending
   std::string enableRandomTriggersMethod =
             toolbox::toString("/%s/EnableRandomTriggers",urn.c_str());
+	enableRandomTriggersMethod = "javascript:expertFunction('" + enableRandomTriggersMethod+"')";
   *out << cgicc::fieldset().set("style","font-size: 10pt; font-family: arial;");
           *out << std::endl;
           *out << cgicc::legend("Set frequency at which to enable random triggers in Hz") << cgicc::p() << std::endl;
-  *out << cgicc::form().set("method","GET").set("action", enableRandomTriggersMethod) << std::endl;
+  *out << cgicc::form().set("ID","formEnableRandomTriggers").set("method","GET").set("action", enableRandomTriggersMethod) << std::endl;
   *out << "<select name=\"FrequencyUInt\">" << std::endl;
   *out << "<option value=\"" << "100" << "\">" << "100" << std::endl;
   *out << cgicc::input().set("type","submit").set("value","Send") << std::endl; *out << cgicc::form() << std::endl;
@@ -933,25 +937,29 @@ pixel::tcds::PixelTCDSSupervisor::tableBgoString(xgi::Output* out)
   // form for UpdateHardwareConfigurationFile
   std::string updateHardwareConfigurationFileMethod =
             toolbox::toString("/%s/UpdateHardwareConfigurationFile",urn.c_str());
+			
+	updateHardwareConfigurationFileMethod = "javascript:expertFunction('" + updateHardwareConfigurationFileMethod+"')";
   *out << cgicc::fieldset().set("style","font-size: 10pt; font-family: arial;");
           *out << std::endl;
           *out << cgicc::legend("Load new hardware configuration file (from disk accessible from XDAQ application)") << cgicc::p() << std::endl;
-  *out << cgicc::form().set("method","GET").set("action", updateHardwareConfigurationFileMethod) << std::endl;
+  *out << cgicc::form().set("ID", "formUpdateHardwareConfigurationFile").set("method","GET").set("action", updateHardwareConfigurationFileMethod) << std::endl;
   *out << cgicc::label("&nbsp;&nbsp;&nbsp;&nbsp;(enter absolute path): ") << std::endl;
   *out << cgicc::input().set("type","text")
           .set("name", "FileNameString")
           .set("size", "100").set("value",hwCfgFileName_) << std::endl;
-  *out << cgicc::input().set("type","submit").set("value","aaa") << std::endl; *out << cgicc::form() << std::endl;
+  *out << cgicc::input().set("type","submit").set("value","Send") << std::endl; *out << cgicc::form() << std::endl;
   *out << cgicc::fieldset();
-
+  
   // form for UpdateHardwareConfiguration
   // take file on local computer and upload it as config
   std::string updateHardwareConfigurationMethod =
             toolbox::toString("/%s/UpdateHardwareConfiguration",urn.c_str());
+	updateHardwareConfigurationMethod = "javascript:updateHardwareConfigurationFileMethodUpload('" + updateHardwareConfigurationMethod+"')";
+	
   *out << cgicc::fieldset().set("style","font-size: 10pt; font-family: arial;");
           *out << std::endl;
           *out << cgicc::legend("Load new hardware configuration (by uploading configuration file)") << cgicc::p() << std::endl;
-  *out << cgicc::form().set("method","POST").set("action", updateHardwareConfigurationMethod).set("enctype", "multipart/form-data") << std::endl;
+  *out << cgicc::form().set("ID", "formUpdateHardwareConfigurationUpload").set("method","POST").set("action", updateHardwareConfigurationMethod).set("enctype", "multipart/form-data") << std::endl;
   *out << cgicc::input().set("type","file")
           .set("accept", "text/*")
           .set("name", "ConfigurationString") << std::endl;
@@ -963,6 +971,7 @@ pixel::tcds::PixelTCDSSupervisor::tableBgoString(xgi::Output* out)
 void
 pixel::tcds::PixelTCDSSupervisor::tableStatus(xgi::Output* out)
 {
+
 *out<<"<table class=\"table table-hover\" style=\"display: inline-block; float: left;\">\n"
 		<<"<thead>\n"
 		<<"<tr>\n"
@@ -1014,7 +1023,7 @@ pixel::tcds::PixelTCDSSupervisor::tableLogConfig(xgi::Output* out)
 {
 	*out<<"<div id = \"hard-config\" style=\"display: inline-block;\">\n"
 		<<"<h4>Hardware Configuration</h4>\n"
-		<<"<textarea id = \"tb_Hardware_Configuration\" rows=\"5\" cols=\"50\" height=\"10\" readonly = \"true\">\n"
+		<<"<textarea id = \"tb_Hardware_Configuration\" rows=\"5\" cols=\"150\" height=\"10\" readonly = \"true\">\n"
 		<< tb_Hardware_Configuration
 		<<"</textarea>"
 		<<"</div>\n";
@@ -1290,7 +1299,7 @@ pixel::tcds::PixelTCDSSupervisor::updateHardwareConfigurationFile(xgi::Input* in
       statusMsg_ = msg;
       this->notifyQualified("error",err);
     }
-  redirect(in, out);
+  //redirect(in, out);
 }
 
 void
@@ -1300,8 +1309,18 @@ pixel::tcds::PixelTCDSSupervisor::updateHardwareConfiguration(xgi::Input* in, xg
   try
     {
       cgicc::Cgicc cgi(in);
+	  std::cout<<"begin"<<std::endl;
       cgicc::const_file_iterator file = cgi.getFile("ConfigurationString");
+	  if(file==cgi.getFiles().end()){
+		std::cout<<"File does not exist"<<std::endl;
+		return;
+	  }
+		
       std::string configurationString = file->getData();
+	  if(configurationString.length()>0)
+		std::cout<<"good"<<std::endl;
+		else
+		std::cout<<"bad"<<std::endl;
       if (file->getDataType() == "text/plain") {
         LOG4CPLUS_INFO(logger_, "Using the following ConfigurationString:\n" + configurationString );
         hwCfgString_ = configurationString;
@@ -1318,7 +1337,7 @@ pixel::tcds::PixelTCDSSupervisor::updateHardwareConfiguration(xgi::Input* in, xg
       statusMsg_ = msg;
       this->notifyQualified("error",err);
     }
-  redirect(in, out);
+  //redirect(in, out);
 }
 
 
