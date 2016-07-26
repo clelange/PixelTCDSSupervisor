@@ -18,6 +18,11 @@
 
 #include "PixelTCDSSupervisor/PixelTCDSBase.h"
 
+#include "toolbox/TimeInterval.h"
+#include "toolbox/TimeVal.h"
+#include "string.h"
+//#include "map"
+
 namespace log4cplus {
   class Logger;
 }
@@ -54,24 +59,24 @@ namespace pixel {
       // FSM state transition
       void fsmTransition(std::string eventName)
               throw (xcept::Exception);
-      
+
       //
       // SOAP Callback triggers state change initialized -> working
       //
       xoap::MessageReference Configure (xoap::MessageReference msg)
               throw (xoap::exception::Exception);
-      
+
       //
       // Finite State Machine callback for entering state
       //
       void stateChanged(toolbox::fsm::FiniteStateMachine & fsm)
-              throw (toolbox::fsm::exception::Exception);             
-      
+              throw (toolbox::fsm::exception::Exception);
+
       //
       // WorkLoop function performing until ICIController is configured
       //
       bool working(toolbox::task::WorkLoop* wl);
-    
+
     protected:
       toolbox::fsm::FiniteStateMachine fsm_; // the actual state machine
       toolbox::task::WorkLoop* workLoop_;
@@ -94,18 +99,28 @@ namespace pixel {
       void ttcHardResetAction();
       void renewHardwareLeaseAction();
       void readHardwareConfigurationAction();
+	  void JSONAction();
       void sendL1AAction();
       void sendBgoAction(xdata::UnsignedInteger commandUInt);
       void sendBgoStringAction(xdata::String commandString);
       void sendBgoTrainAction(xdata::String trainString);
       void enableRandomTriggersAction(xdata::UnsignedInteger frequencyUInt);
-      
+
       void mainPage(xgi::Input* in, xgi::Output* out);
       void redirect(xgi::Input* in, xgi::Output* out);
-	  
+
 	  void loadWaitScreen(xgi::Output* out);
 	  void lostConnection(xgi::Output* out);
 	  void tabPresentation(xgi::Output* out);
+	  void tableConfig(xgi::Output* out);
+	  void tableHistory(xgi::Output* out);
+	  void tableSOAP(xgi::Output* out);
+	  void tableBgoString(xgi::Output* out);
+	  void tableStatus(xgi::Output* out);
+	  void tableRemoteInfo(xgi::Output* out);
+	  void tableLogConfig(xgi::Output* out);
+	  
+	  void printLine(xgi::Output* out, std::string nameText, std::string nameID);
 
       void queryFSMState(xgi::Input* in, xgi::Output* out);
       void queryHwLeaseOwner(xgi::Input* in, xgi::Output* out);
@@ -130,11 +145,17 @@ namespace pixel {
       void enableRandomTriggers(xgi::Input* in, xgi::Output* out);
       void updateHardwareConfigurationFile(xgi::Input* in, xgi::Output* out);
       void updateHardwareConfiguration(xgi::Input* in, xgi::Output* out);
-      
+
+	  void jsonUpdate(xgi::Input* const in, xgi::Output* const out);
+	  void jsonUpdateCore(xgi::Input* const in, xgi::Output* const out);
+	  
+
+	  std::string formatTimestamp(toolbox::TimeVal const timestamp);
+	  std::string formatDeltaTString(toolbox::TimeVal const timeBegin, toolbox::TimeVal const timeEnd);
       xoap::MessageReference fireEvent ( xoap::MessageReference msg ) throw ( xoap::exception::Exception );
 
       virtual void onException(xcept::Exception& err);
-      
+
       void readConfigFile();
 
       xdata::String hwCfgString_;
@@ -148,10 +169,21 @@ namespace pixel {
 
       xdata::String statusMsg_;
       log4cplus::Logger& logger_;
-      
+
       // PixelSupervisor
       xdaq::ApplicationDescriptor* PixelSupervisor_;
       bool firstTransition;
+
+	  std::string appNameAndInstance_;
+	  std::string appNamePlusInstance_;
+	  // The start time of the monitor. Just for a simplistic estimate
+      // of the application uptime.
+      toolbox::TimeVal timeStart_;
+	  std::string tb_Status_uptime, tb_Status_timenow, tb_Status_appFSM, tb_Status_appstatus, tb_Status_prodesc, tb_Status_runsession, tb_Status_appmode, tb_Status_latestMonitoringDuration;
+		std::string tb_Config_state, tb_Config_TCDS, tb_Config_sessionID, tb_Config_renewInteval, tb_Config_runNumber, tb_Config_hardware, tb_Config_statusMsg;
+		std::string tb_Remote_tcdsState, tb_Remote_Hardware;
+		std::string tb_Hardware_Configuration;
+		//std::map < std::string, std::string > allVariables;
 
     }; // class PixelTCDSSupervisor
   } // namespace tcds

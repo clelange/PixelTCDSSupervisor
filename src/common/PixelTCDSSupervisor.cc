@@ -30,6 +30,7 @@
 #include "xoap/domutils.h"
 
 
+
 XDAQ_INSTANTIATOR_IMPL(pixel::tcds::PixelTCDSSupervisor);
 
 pixel::tcds::PixelTCDSSupervisor::PixelTCDSSupervisor(xdaq::ApplicationStub* stub)
@@ -47,6 +48,7 @@ try
     statusMsg_(""),
     logger_(getApplicationLogger())
   {
+	timeStart_= toolbox::TimeVal::gettimeofday();
     // Set the application icon.
     std::string const iconFileName = "/pixel/PixelWeb/icons/pixelici_icon.png";
     getApplicationDescriptor()->setAttribute("icon", iconFileName);
@@ -62,8 +64,10 @@ try
                                                  &runNumber_);
     std::ostringstream oss;
     oss << getApplicationDescriptor()->getClassName() << getApplicationDescriptor()->getInstance();
-    std::string appNameAndInstance_ = oss.str();
-
+	appNameAndInstance_ = oss.str();
+	std::ostringstream oss2;
+    oss2 << getApplicationDescriptor()->getClassName() << " instance " <<getApplicationDescriptor()->getInstance();
+	appNamePlusInstance_= oss2.str();
     // Binding of the main HyperDAQ page.
     xgi::framework::deferredbind(this, this, &pixel::tcds::PixelTCDSSupervisor::mainPage, "Default");
 
@@ -93,7 +97,8 @@ try
     xgi::framework::deferredbind(this, this, &pixel::tcds::PixelTCDSSupervisor::sendBgoTrain, "SendBgoTrain");
     xgi::framework::deferredbind(this, this, &pixel::tcds::PixelTCDSSupervisor::updateHardwareConfigurationFile, "UpdateHardwareConfigurationFile");
     xgi::framework::deferredbind(this, this, &pixel::tcds::PixelTCDSSupervisor::updateHardwareConfiguration, "UpdateHardwareConfiguration");
-    
+	xgi::deferredbind(this, this, &pixel::tcds::PixelTCDSSupervisor::jsonUpdate, "update");
+
     // Bind workloop function
     job_ = toolbox::task::bind(this, &pixel::tcds::PixelTCDSSupervisor::working, "working");
     workLoop_ = toolbox::task::getWorkLoopFactory()->getWorkLoop(appNameAndInstance_, "waiting");
@@ -120,8 +125,9 @@ try
     xoap::bind(this, &pixel::tcds::PixelTCDSSupervisor::fireEvent, "SendL1A", XDAQ_NS_URI );
     xoap::bind(this, &pixel::tcds::PixelTCDSSupervisor::fireEvent, "UpdateHardwareConfigurationFile", XDAQ_NS_URI );
     xoap::bind(this, &pixel::tcds::PixelTCDSSupervisor::fireEvent, "UpdateHardwareConfiguration", XDAQ_NS_URI );
+	xoap::bind(this, &pixel::tcds::PixelTCDSSupervisor::fireEvent, "update", XDAQ_NS_URI );
     // xoap::bind(this, &pixel::tcds::PixelTCDSSupervisor::fireEvent, "SendBgo", XDAQ_NS_URI );
-    
+
     // Define FSM
     fsm_.addState ('I', "Initial", this, &pixel::tcds::PixelTCDSSupervisor::stateChanged);
     fsm_.addState ('H', "Halted", this, &pixel::tcds::PixelTCDSSupervisor::stateChanged);
@@ -151,12 +157,11 @@ try
 
     fsm_.setInitialState('I');
     fsm_.reset();
-    
+
     // make sure no PixelSupervisor remains
     PixelSupervisor_ = 0;
     firstTransition = true;
-
-    
+	
   }
 catch (xcept::Exception const& err)
   {
@@ -177,7 +182,7 @@ pixel::tcds::PixelTCDSSupervisor::~PixelTCDSSupervisor()
 void pixel::tcds::PixelTCDSSupervisor::fsmTransition(std::string transitionName)
   throw (xcept::Exception)
 {
-  try 
+  try
   {
     toolbox::Event::Reference e(new toolbox::Event(transitionName,this));
   	fsm_.fireEvent(e);
@@ -193,7 +198,7 @@ void pixel::tcds::PixelTCDSSupervisor::stateChanged(toolbox::fsm::FiniteStateMac
   // Reflect the new state
   std::string state = fsm_.getStateName (fsm_.getCurrentState());
   LOG4CPLUS_INFO (getApplicationLogger(), "New state is: " << state );
-  
+
   //  if (!firstTransition && state == "Configured") {
   if (!firstTransition) {
     // try {
@@ -214,7 +219,7 @@ void pixel::tcds::PixelTCDSSupervisor::stateChanged(toolbox::fsm::FiniteStateMac
   else {
     firstTransition = false;
   }
-  
+
   if (state == "Configuring")
     {
       // submit the job in working state
@@ -232,7 +237,7 @@ void pixel::tcds::PixelTCDSSupervisor::stateChanged(toolbox::fsm::FiniteStateMac
     }
   else if (state == "Configured")
     {
-      LOG4CPLUS_INFO (getApplicationLogger(), "Finished configuring");	
+      LOG4CPLUS_INFO (getApplicationLogger(), "Finished configuring");
     }
 }
 
@@ -248,7 +253,7 @@ bool pixel::tcds::PixelTCDSSupervisor::working(toolbox::task::WorkLoop* wl)
     return false;
   }
   LOG4CPLUS_INFO(getApplicationLogger(), "Not yet configured: " << tcdsState_.toString() );
-  
+
 	// return true to automatically re-submit the function to the Workloop
 	return true;
 }
@@ -648,53 +653,203 @@ pixel::tcds::PixelTCDSSupervisor::enableRandomTriggersAction(xdata::UnsignedInte
 /**
  xgi bindings
 **/
-
+int tam = 0;
 void
 pixel::tcds::PixelTCDSSupervisor::mainPage(xgi::Input* in, xgi::Output* out)
 {
   // Local parameters (i.e., of this XDAQ application).
-  *out << "<h1>Local XDAQ: information</h1>\n\n";
+  //*out << "<h1>Local XDAQ: information</h1>\n\n";
+ 
 	  
   loadWaitScreen(out);
   lostConnection(out);
   
-  std::string state = fsm_.getStateName (fsm_.getCurrentState());
-  *out << "<p><b>FSM state:</b> '" << state << "'</p>";
-  *out << "<p>"
-       << "<b>Connected to TCDS application:</b> "
-       << "class '" << tcdsAppClassName() << "'"
-       << ", instance number " << tcdsAppInstance()
-       << "</p>\n";
-  *out << "<p><b>Session id:</b> '" << sessionId() << "'</p>\n";
-  *out << "<p><b>Hardware lease renewal interval:</b> "
-       << hwLeaseRenewalInterval()
-       << "</p>\n";
-  *out << "<p><b>Run number:</b> '" << runNumber_.toString() << "'</p>\n";
-  *out << "<p><b>Hardware configuration file:</b> '"
-       << hwCfgFileName_.toString() << "'</p>\n";
-  *out << "<p><b>Last action:</b> '";
-  if (statusMsg_.toString().find("error") != std::string::npos)
-    *out << "<font color=\"red\">" << statusMsg_.toString() << "'</font></p>\n";
-  else
-    *out << statusMsg_.toString() << "'</p>\n";
+	*out<<"<link href=\"/pixel/PixelWeb/css/bootstrap.css\" rel=\"stylesheet\">\n\n";
+	*out<<"<script type=\"text/javascript\" src=\"/pixel/PixelWeb/js/bootstrap.js\"></script>\n";
 
-  //----------
 
-  // Remote parameters (i.e., of the remote TCDS control application).
-  *out << "<h1>Remote information</h1>";
-  *out << "<p><b>State:</b> " << tcdsState_.toString() << "</p>";
-  std::string const hwLeaseOwnerId(tcdsHwLeaseOwnerId_.toString());
-  std::string tmpStr("");
-  if (hwLeaseOwnerId == "")
-    {
-      tmpStr = " (hardware not leased/lease expired)";
-    }
-  *out << "<p><b>Hardware lease owner id:</b> "
-       << "'" << hwLeaseOwnerId << "'" << tmpStr
-       << "</p>";
+	*out<<"<script type=\"text/javascript\">\n"
+	  <<"$(window).onload = loadWin();\n"
+	  <<"</script>\n\n";
 
-  //----------
+  tabPresentation(out);
+  tableSOAP(out);
+}
+
+void 
+pixel::tcds::PixelTCDSSupervisor::printLine(xgi::Output* out, std::string nameText, std::string nameID){
+	std::string idString = "<td id=\"" + nameID + "\">";
+	
+	*out<<"<tr>\n"
+        <<"<td>"<<nameText<<"</td>\n"
+        <<idString<< (nameID)<<"</td>\n"
+		<<"</tr>\n";
+} 
+
+void
+pixel::tcds::PixelTCDSSupervisor::redirect(xgi::Input* in, xgi::Output* out)
+{
+  // just for convenience update the remote information
+  queryFSMStateAction();
+  queryHwLeaseOwnerAction();
+}
+
+void
+pixel::tcds::PixelTCDSSupervisor::loadWaitScreen(xgi::Output* out)
+{
+
+*out<<"<link href=\"/pixel/PixelWeb/css/please-wait.css\" rel=\"stylesheet\">\n";
+*out<<"<link href=\"/pixel/PixelWeb/css/spinkit.css\" rel=\"stylesheet\">\n\n";
+
+*out<<"<script type=\"text/javascript\" src=\"/pixel/PixelWeb/js/please-wait.js\"></script>\n";
+
+  *out<<"<script type=\"text/javascript\">\n"
+      <<"window.loading_screen = window.pleaseWait({\n"
+      <<"logo: \"/pixel/PixelWeb/icons/pixelici_icon.png\",\n"
+      <<"backgroundColor: '#f46d3b',\n"
+	  <<"loadingHtml: \"<p class='loading-message'><font color='white' size='4'>Loading "<<appNamePlusInstance_<<"</font><div class=\'sk-rotating-plane\'></div>\"\n"
+      <<"});\n"
+	  <<"$(document).ready(loading_screen.finish());\n"
+	  <<"</script>\n\n";
+}
+
+void
+pixel::tcds::PixelTCDSSupervisor::lostConnection(xgi::Output* out)
+{
+	*out<<"<link href=\"/pixel/PixelWeb/css/xdaqPage.css\" rel=\"stylesheet\">\n\n";
+	*out<<"<script type=\"text/javascript\" src=\"/pixel/PixelWeb/js/lostConnection.js\"></script>\n";
+	*out<<"<script type=\"text/javascript\" src=\"/pixel/PixelWeb/js/windowLoad.js\"></script>\n";
+	*out<<"<script type=\"text/javascript\">\n"
+	  <<"$(window).onload = loadWin();\n"
+	  <<"</script>\n\n";
+}
+
+void
+pixel::tcds::PixelTCDSSupervisor::tableConfig(xgi::Output* out)
+{
+	*out<<"<div style=\"float:left;\">\n";
+	*out<<"<h3>CONFIGURATION</h3>\n"
+		<<"<p>Application Configuration.</p>\n";
+	*out<<"<table class=\"table table-hover\" style=\"display: inline-block; float: left; width: 600px\">\n"
+		<<"<thead>\n"
+		<<"<tr>\n"
+        <<"<th>Setting</th>\n"
+        <<"<th>Status</th>\n"
+		<<"</tr>\n"
+		<<"</thead>\n"
+		<<"<tbody>\n";
+		printLine(out, "FSM state", "tb_Config_state");
+		printLine(out, "Connected to TCDS application", "tb_Config_TCDS");
+		printLine(out, "tb_Config_sessionID", "tb_Config_sessionID");
+		printLine(out, "Hardware lease renewal interval", "tb_Config_renewInteval");
+		printLine(out, "Run number", "tb_Config_runNumber");
+		printLine(out, "Hardware configuration file", "tb_Config_hardware");
+		printLine(out, "Last action", "tb_Config_statusMsg");
+
+	*out<<"</tbody>\n"
+		<<"</table>\n\n";
+	*out<<"</div>\n";
+}
+
+
+
+void
+pixel::tcds::PixelTCDSSupervisor::tableHistory(xgi::Output* out)
+{
+	*out<<"<table class=\"table table-hover\">\n"
+		<<"<thead>\n"
+		<<"<tr>\n"
+        <<"<th>Timestamp</th>\n"
+        <<"<th>Message</th>\n"
+		<<"</tr>\n"
+		<<"</thead>\n"
+		<<"<tbody>\n"
+
+		<<"<tr>\n"
+        <<"<td>abc</td>\n"
+        <<"<td>xyz</td>\n"
+		<<"</tr>\n"
+
+		<<"</tbody>\n"
+		<<"</table>\n\n";
+}
+
+void
+pixel::tcds::PixelTCDSSupervisor::tableSOAP(xgi::Output* out)
+{
+  *out<<"<script type=\"text/javascript\" src=\"/pixel/PixelWeb/js/button.js\"></script>\n";
+  // A list of all available (remote) SOAP commands.
+  *out << "<h3>SOAP commands</h3>";
+
+  std::string const url(getApplicationDescriptor()->getContextDescriptor()->getURL());
+  std::string const urn(getApplicationDescriptor()->getURN());
+
+  std::vector<std::string> commands;
+  commands.push_back("Initialize");
+  commands.push_back("Configure");
+  commands.push_back("Start");
+  commands.push_back("Pause");
+  commands.push_back("Resume");
+  commands.push_back("Stop");
+  commands.push_back("Halt");
+  commands.push_back("ColdReset");
+  commands.push_back("Reset");
   
+  std::vector<std::string> commands2;
+  commands2.push_back("TTCResync");
+  commands2.push_back("TTCHardReset");
+  commands2.push_back("RenewHardwareLease");
+  commands2.push_back("ReadHardwareConfiguration");
+  commands2.push_back("SendL1A");
+
+  *out << "<ul>\n";
+
+  *out << "<button href=\""
+       << url << "/" << urn << "/QueryFSMState"
+       << "\" class=\"btn btn-info\" role=\"button\" id=\"QueryFSMState\" onclick=\"buttonClick(this.id)\">Query FSM state</button>\n";
+
+  *out << "<button href=\""
+       << url << "/" << urn << "/QueryHardwareLeaseOwnerId"
+       << "\" class=\"btn btn-info\" style=\"margin-left:20px\" role=\"button\" id=\"QueryHardwareLeaseOwnerId\" onclick=\"buttonClick(this.id)\">Query hardware lease owner</button>\n";
+  *out << "</ul>\n";
+
+  *out << "<ul>\n";
+  for (std::vector<std::string>::const_iterator cmd = commands.begin();
+       cmd != commands.end();
+       ++cmd)
+    {
+      *out << "<button href=\""
+           << url << "/" << urn << "/" << *cmd
+           << "\" class=\"btn btn-primary\" id=\""<<*cmd<<"\" onclick=\"buttonClick(this.id)\" style=\"margin-left:10px; margin-top:20px\" type=\"button\" >" << *cmd << "</button>\n";
+    }
+  *out << "</ul>\n";
+  
+  *out << "<ul>\n";
+  for (std::vector<std::string>::const_iterator cmd = commands2.begin();
+       cmd != commands2.end();
+       ++cmd)
+    {
+      *out << "<button href=\""
+           << url << "/" << urn << "/" << *cmd
+           << "\" class=\"btn btn-info\" id=\""<<*cmd<<"\" onclick=\"buttonClick(this.id)\" style=\"margin-left:10px; margin-top:20px\" type=\"button\" >" << *cmd << "</button>\n";
+    }
+  *out << "</ul>\n";
+
+  *out<<"<button id=\"ExpertActions\" type=\"button\" class=\"btn btn-success active\" onclick=\"buttonClick(this.id)\">Expert Actions</button>\n";
+
+  *out<<"<script type=\"text/javascript\">\n"
+	  <<"defaultState();\n"
+	  <<"</script>\n\n";
+}
+
+
+void
+pixel::tcds::PixelTCDSSupervisor::tableBgoString(xgi::Output* out)
+{
+  std::string const url(getApplicationDescriptor()->getContextDescriptor()->getURL());
+  std::string const urn(getApplicationDescriptor()->getURN());
+
+//----------
   std::vector<std::string> bgoCommands;
   bgoCommands.push_back("Bgo0");
   bgoCommands.push_back("BC0");
@@ -712,7 +867,7 @@ pixel::tcds::PixelTCDSSupervisor::mainPage(xgi::Input* in, xgi::Output* out)
   bgoCommands.push_back("WarningTestEnable");
   bgoCommands.push_back("Bgo14");
   bgoCommands.push_back("Bgo15");
-  
+
   std::vector<std::string> bgoTrains;
   bgoTrains.push_back("Start");
   bgoTrains.push_back("Stop");
@@ -720,110 +875,74 @@ pixel::tcds::PixelTCDSSupervisor::mainPage(xgi::Input* in, xgi::Output* out)
   bgoTrains.push_back("Resume");
   bgoTrains.push_back("TTCResync");
   bgoTrains.push_back("TTCHardReset");
-
-  // A list of all available (remote) SOAP commands.
-  *out << "<h1>SOAP commands</h1>";
-
-  std::string const url(getApplicationDescriptor()->getContextDescriptor()->getURL());
-  std::string const urn(getApplicationDescriptor()->getURN());
-
-  std::vector<std::string> commands;
-  commands.push_back("Initialize");
-  commands.push_back("Configure");
-  commands.push_back("Start");
-  commands.push_back("Pause");
-  commands.push_back("Resume");
-  commands.push_back("Stop");
-  commands.push_back("Halt");
-  commands.push_back("ColdReset");
-  commands.push_back("Reset");
-  commands.push_back("TTCResync");
-  commands.push_back("TTCHardReset");
-  commands.push_back("RenewHardwareLease");
-  commands.push_back("ReadHardwareConfiguration");
-  commands.push_back("SendL1A");
-
-  *out << "<ul>";
-  *out << "<li><a href=\""
-       << url << "/" << urn << "/QueryFSMState"
-       << "\">Query FSM state</a></li>";
-  *out << "<li><a href=\""
-       << url << "/" << urn << "/QueryHardwareLeaseOwnerId"
-       << "\">Query hardware lease owner</a></li>";
-  *out << "</ul>";
-
-  *out << "<ul>";
-  for (std::vector<std::string>::const_iterator cmd = commands.begin();
-       cmd != commands.end();
-       ++cmd)
-    {
-      *out << "<li><a href=\""
-           << url << "/" << urn << "/" << *cmd
-           << "\">" << *cmd << "</a></li>";
-    }
-  *out << "</ul>";
-  
   // form for B-go string sending
   std::string sendBgoStringMethod =
             toolbox::toString("/%s/SendBgoString",urn.c_str());
+	sendBgoStringMethod = "javascript:expertFunction('" + sendBgoStringMethod+"')";
   *out << cgicc::fieldset().set("style","font-size: 10pt; font-family: arial;");
           *out << std::endl;
           *out << cgicc::legend("Set B-go string to send") << cgicc::p() << std::endl;
-  *out << cgicc::form().set("method","GET").set("action", sendBgoStringMethod) << std::endl;
+  *out << cgicc::form().set("ID","formSendBgoString").set("method","GET").set("action", sendBgoStringMethod) << std::endl;
   *out << "<select name=\"CommandString\">" << std::endl;
   for (unsigned int i = 0; i < bgoCommands.size(); ++i) {
     *out << "<option value=\"" << bgoCommands.at(i) << "\">" << bgoCommands.at(i) << std::endl;
   }
   *out << cgicc::input().set("type","submit").set("value","Send") << std::endl; *out << cgicc::form() << std::endl;
   *out << cgicc::fieldset();
-  
+
   // form for B-go train sending
   std::string sendBgoTrainMethod =
             toolbox::toString("/%s/SendBgoTrain",urn.c_str());
+	sendBgoTrainMethod = "javascript:expertFunction('" + sendBgoTrainMethod+"')";
   *out << cgicc::fieldset().set("style","font-size: 10pt; font-family: arial;");
           *out << std::endl;
           *out << cgicc::legend("Set B-go train string to send") << cgicc::p() << std::endl;
-  *out << cgicc::form().set("method","GET").set("action", sendBgoTrainMethod) << std::endl;
+  *out << cgicc::form().set("ID","formSendBgoTrain").set("method","GET").set("action", sendBgoTrainMethod) << std::endl;
   *out << "<select name=\"TrainString\">" << std::endl;
   for (unsigned int i = 0; i < bgoTrains.size(); ++i) {
     *out << "<option value=\"" << bgoTrains.at(i) << "\">" << bgoTrains.at(i) << std::endl;
   }
   *out << cgicc::input().set("type","submit").set("value","Send") << std::endl; *out << cgicc::form() << std::endl;
   *out << cgicc::fieldset();
-  
+
   // form for B-go int sending
   std::string sendBgoMethod =
             toolbox::toString("/%s/SendBgo",urn.c_str());
+
+	sendBgoMethod = "javascript:expertFunction('" + sendBgoMethod+"')";
   *out << cgicc::fieldset().set("style","font-size: 10pt; font-family: arial;");
           *out << std::endl;
           *out << cgicc::legend("Set B-go unsigned integer to send") << cgicc::p() << std::endl;
-  *out << cgicc::form().set("method","GET").set("action", sendBgoMethod) << std::endl;
+  *out << cgicc::form().set("ID","formSendBgoMethod").set("method","GET").set("action", sendBgoMethod) << std::endl;
   *out << "<select name=\"CommandUInt\">" << std::endl;
   for (unsigned int bgoNumber = 0; bgoNumber <= 15; ++bgoNumber) {
     *out << "<option value=\"" << bgoNumber << "\">" << bgoNumber << std::endl;
   }
   *out << cgicc::input().set("type","submit").set("value","Send") << std::endl; *out << cgicc::form() << std::endl;
   *out << cgicc::fieldset();
-  
+
   // form for EnableRandomTriggers uint sending
   std::string enableRandomTriggersMethod =
             toolbox::toString("/%s/EnableRandomTriggers",urn.c_str());
+	enableRandomTriggersMethod = "javascript:expertFunction('" + enableRandomTriggersMethod+"')";
   *out << cgicc::fieldset().set("style","font-size: 10pt; font-family: arial;");
           *out << std::endl;
           *out << cgicc::legend("Set frequency at which to enable random triggers in Hz") << cgicc::p() << std::endl;
-  *out << cgicc::form().set("method","GET").set("action", enableRandomTriggersMethod) << std::endl;
+  *out << cgicc::form().set("ID","formEnableRandomTriggers").set("method","GET").set("action", enableRandomTriggersMethod) << std::endl;
   *out << "<select name=\"FrequencyUInt\">" << std::endl;
   *out << "<option value=\"" << "100" << "\">" << "100" << std::endl;
   *out << cgicc::input().set("type","submit").set("value","Send") << std::endl; *out << cgicc::form() << std::endl;
   *out << cgicc::fieldset();
-  
+
   // form for UpdateHardwareConfigurationFile
   std::string updateHardwareConfigurationFileMethod =
             toolbox::toString("/%s/UpdateHardwareConfigurationFile",urn.c_str());
+			
+	updateHardwareConfigurationFileMethod = "javascript:expertFunction('" + updateHardwareConfigurationFileMethod+"')";
   *out << cgicc::fieldset().set("style","font-size: 10pt; font-family: arial;");
           *out << std::endl;
           *out << cgicc::legend("Load new hardware configuration file (from disk accessible from XDAQ application)") << cgicc::p() << std::endl;
-  *out << cgicc::form().set("method","GET").set("action", updateHardwareConfigurationFileMethod) << std::endl;
+  *out << cgicc::form().set("ID", "formUpdateHardwareConfigurationFile").set("method","GET").set("action", updateHardwareConfigurationFileMethod) << std::endl;
   *out << cgicc::label("&nbsp;&nbsp;&nbsp;&nbsp;(enter absolute path): ") << std::endl;
   *out << cgicc::input().set("type","text")
           .set("name", "FileNameString")
@@ -835,10 +954,12 @@ pixel::tcds::PixelTCDSSupervisor::mainPage(xgi::Input* in, xgi::Output* out)
   // take file on local computer and upload it as config
   std::string updateHardwareConfigurationMethod =
             toolbox::toString("/%s/UpdateHardwareConfiguration",urn.c_str());
+	updateHardwareConfigurationMethod = "javascript:updateHardwareConfigurationFileMethodUpload('" + updateHardwareConfigurationMethod+"')";
+	
   *out << cgicc::fieldset().set("style","font-size: 10pt; font-family: arial;");
           *out << std::endl;
           *out << cgicc::legend("Load new hardware configuration (by uploading configuration file)") << cgicc::p() << std::endl;
-  *out << cgicc::form().set("method","POST").set("action", updateHardwareConfigurationMethod).set("enctype", "multipart/form-data") << std::endl;
+  *out << cgicc::form().set("ID", "formUpdateHardwareConfigurationUpload").set("method","POST").set("action", updateHardwareConfigurationMethod).set("enctype", "multipart/form-data") << std::endl;
   *out << cgicc::input().set("type","file")
           .set("accept", "text/*")
           .set("name", "ConfigurationString") << std::endl;
@@ -848,65 +969,102 @@ pixel::tcds::PixelTCDSSupervisor::mainPage(xgi::Input* in, xgi::Output* out)
 }
 
 void
-pixel::tcds::PixelTCDSSupervisor::redirect(xgi::Input* in, xgi::Output* out)
+pixel::tcds::PixelTCDSSupervisor::tableStatus(xgi::Output* out)
 {
-  // just for convenience update the remote information
-  queryFSMStateAction();
-  queryHwLeaseOwnerAction();
 
-  // Redirect back to the default page.
-  *out << "<script language=\"javascript\">"
-       << "window.location=\"Default\""
-       << "</script>";
+*out<<"<table class=\"table table-hover\" style=\"display: inline-block; float: left;\">\n"
+		<<"<thead>\n"
+		<<"<tr>\n"
+        <<"<th>Setting</th>\n"
+        <<"<th>Status</th>\n"
+		<<"</tr>\n"
+		<<"</thead>\n"
+		<<"<tbody>\n";
+
+		printLine(out, "Application FSM state", "tb_Status_appFSM");
+		printLine(out, "Application Status", "tb_Status_appstatus");
+		printLine(out, "Problem Description", "tb_Status_prodesc");
+		printLine(out, "RunControl session in charge", "tb_Status_runsession");
+		printLine(out, "Application mode", "tb_Status_appmode");
+		printLine(out, "Uptime", "tb_Status_uptime");
+		printLine(out, "Latest monitoring update time", "tb_Status_timenow");
+		printLine(out, "Latest monitoring update durations", "tb_Status_latestMonitoringDuration");
+		
+	*out<<"</tbody>\n"
+		<<"</table>\n\n";
 }
 
 void
-pixel::tcds::PixelTCDSSupervisor::loadWaitScreen(xgi::Output* out)
+pixel::tcds::PixelTCDSSupervisor::tableRemoteInfo(xgi::Output* out)
 {
+// Remote parameters (i.e., of the remote TCDS control application).
+*out<<"<div style=\"float:left; margin-left:50px\">\n";
+*out<< "<h3>REMOTE INFOMATION</h3>\n"
+	<<"<p>Application Remote Infomation</p>\n";
+*out<<"<table class=\"table table-hover\" style=\"display: inline-block;\">\n"
+		<<"<thead>\n"
+		<<"<tr>\n"
+        <<"<th>Setting</th>\n"
+        <<"<th>Status</th>\n"
+		<<"</tr>\n"
+		<<"</thead>\n"
+		<<"<tbody>\n";
 
-*out<<"<link href=\"/pixel/PixelWeb/css/please-wait.css\" rel=\"stylesheet\">\n";
-*out<<"<link href=\"/pixel/PixelWeb/css/spinkit.css\" rel=\"stylesheet\">\n\n";
+		printLine(out, "State", "tb_Remote_tcdsState");
+		printLine(out, "Hardware lease owner id", "tb_Remote_Hardware");
 
-*out<<"<script type=\"text/javascript\" src=\"/pixel/PixelWeb/js/please-wait.js\"></script>\n";
-  
-  *out<<"<script type=\"text/javascript\">\n"
-      <<"window.loading_screen = window.pleaseWait({\n"
-      <<"logo: \"/pixel/PixelWeb/icons/pixelici_icon.png\",\n"
-      <<"backgroundColor: '#f46d3b',\n"
-      <<"loadingHtml: \"<p class='loading-message'>Loading....</p><div class='sk-spinner sk-spinner-wave'><div class='sk-rect1'></div><div class='sk-rect2'></div><div class='sk-rect3'></div><div class='sk-rect4'></div><div class='sk-rect5'></div></div>\"\n"	
-      <<"});\n"
-	  <<"$(document).ready(loading_screen.finish());\n"
-	  <<"</script>\n\n";
-	  
-	  
- /* *out<<"<div class=\"spinner\">\n"
-	  <<"<div class=\"double-bounce1\"></div>\n"
-	  <<"<div class=\"double-bounce2\"></div>\n"
-	  <<"</div>\"\n"; */
-  //*out<<" <div class=\"sk-rotating-plane\"></div>\n";
-	  
+	*out<<"</tbody>\n"
+		<<"</table>\n\n"
+		<<"</div>\n";
 }
 
 void
-pixel::tcds::PixelTCDSSupervisor::lostConnection(xgi::Output* out)
+pixel::tcds::PixelTCDSSupervisor::tableLogConfig(xgi::Output* out)
 {
-	*out<<"<link href=\"/pixel/PixelWeb/css/xdaqPage.css\" rel=\"stylesheet\">\n\n";
-	*out<<"<script type=\"text/javascript\" src=\"/pixel/PixelWeb/js/lostConnection.js\"></script>\n";
-	*out<<"<script type=\"text/javascript\" src=\"/pixel/PixelWeb/js/windowLoad.js\"></script>\n";
-	*out<<"<script type=\"text/javascript\">\n"
-	  <<"$(window).onload = loadWin();\n"
-	  <<"</script>\n\n";
+	*out<<"<div id = \"hard-config\" style=\"display: inline-block;\">\n"
+		<<"<h4>Hardware Configuration</h4>\n"
+		<<"<textarea id = \"tb_Hardware_Configuration\" rows=\"5\" cols=\"150\" height=\"10\" readonly = \"true\">\n"
+		<< tb_Hardware_Configuration
+		<<"</textarea>"
+		<<"</div>\n";
 }
-
 void
 pixel::tcds::PixelTCDSSupervisor::tabPresentation(xgi::Output* out)
 {
-	*out<<"<link href=\"/pixel/PixelWeb/css/bootstrap.css\" rel=\"stylesheet\">\n\n";
-	*out<<"<script type=\"text/javascript\" src=\"/pixel/PixelWeb/js/bootstrap.js\"></script>\n";
-	
-	*out<<"<script type=\"text/javascript\">\n"
-	  <<"$(window).onload = loadWin();\n"
-	  <<"</script>\n\n";
+
+	*out<<"<div class=\"container\">\n"
+		<<"<h2>"<<appNamePlusInstance_<<"</h2>\n"
+		<<"<ul class=\"nav nav-tabs\">\n"
+		<<"<li class=\"active\"><a data-toggle=\"tab\" href=\"#home\">Configuration</a></li>\n"
+		<<"<li><a data-toggle=\"tab\" href=\"#menu1\">Application Status</a></li>\n"
+		<<"<li><a data-toggle=\"tab\" href=\"#menu2\">Expert Actions</a></li>\n"
+		<<"</ul>\n\n"
+		<<"<div class=\"tab-content\">\n"
+		<<"<div id=\"home\" class=\"tab-pane fade in active\">\n"
+
+		<<"<div >\n";
+	tableConfig(out);
+	tableRemoteInfo(out);
+	*out<<"</div>\n";
+	tableLogConfig(out);
+	*out<<"<div>\n";
+
+	*out<<"</div>\n"
+		<<"</div>\n"
+
+		<<"<div id=\"menu1\" class=\"tab-pane fade\">\n"
+		<<"<h3>APPLICATION STATUS</h3>\n"
+		<<"<p>Application Information.</p>\n";
+	tableStatus(out);
+	*out<<"<h3>HISTORY</h3>\n"
+		<<"<p>Application status and command history.</p>\n";
+	tableHistory(out);
+	*out<<"</div>\n"
+		<<"<div id=\"menu2\" class=\"tab-pane fade\">\n"
+		<<"<h3>EXPERTS ACTIONS</h3>\n"
+		<<"<p>Expert Actions.</p>\n";
+	tableBgoString(out);
+	*out<<"</div>\n</div>\n</div>\n\n";
 }
 
 void
@@ -1141,7 +1299,7 @@ pixel::tcds::PixelTCDSSupervisor::updateHardwareConfigurationFile(xgi::Input* in
       statusMsg_ = msg;
       this->notifyQualified("error",err);
     }
-  redirect(in, out);
+  //redirect(in, out);
 }
 
 void
@@ -1151,8 +1309,18 @@ pixel::tcds::PixelTCDSSupervisor::updateHardwareConfiguration(xgi::Input* in, xg
   try
     {
       cgicc::Cgicc cgi(in);
+	  std::cout<<"begin"<<std::endl;
       cgicc::const_file_iterator file = cgi.getFile("ConfigurationString");
+	  if(file==cgi.getFiles().end()){
+		std::cout<<"File does not exist"<<std::endl;
+		return;
+	  }
+		
       std::string configurationString = file->getData();
+	  if(configurationString.length()>0)
+		std::cout<<"good"<<std::endl;
+		else
+		std::cout<<"bad"<<std::endl;
       if (file->getDataType() == "text/plain") {
         LOG4CPLUS_INFO(logger_, "Using the following ConfigurationString:\n" + configurationString );
         hwCfgString_ = configurationString;
@@ -1169,7 +1337,170 @@ pixel::tcds::PixelTCDSSupervisor::updateHardwareConfiguration(xgi::Input* in, xg
       statusMsg_ = msg;
       this->notifyQualified("error",err);
     }
-  redirect(in, out);
+  //redirect(in, out);
+}
+
+
+void
+pixel::tcds::PixelTCDSSupervisor::JSONAction()
+{
+
+}
+void
+pixel::tcds::PixelTCDSSupervisor::jsonUpdate(xgi::Input* const in, xgi::Output* const out)
+{
+
+    try
+      {
+        jsonUpdateCore(in, out);
+      }
+    catch (xcept::Exception& err)
+      {
+        std::string const msg =
+          toolbox::toString("Failed to serve the JSON update. "
+                            "Caught an exception: '%s'.", err.what());
+        // ERROR(msg);
+        // XCEPT_DECLARE(tcds::exception::RuntimeProblem, top, msg);
+        // getOwnerApplication()->notifyQualified("error", top);
+      }
+}
+
+
+std::string pixel::tcds::PixelTCDSSupervisor::formatTimestamp(toolbox::TimeVal const timestamp)
+{
+  return toolbox::TimeVal(timestamp).toString("%Y-%m-%d %H:%M:%S UTC",
+                                              toolbox::TimeVal::gmt);
+}
+
+std::string pixel::tcds::PixelTCDSSupervisor::formatDeltaTString(toolbox::TimeVal const timeBegin, toolbox::TimeVal const timeEnd)
+{
+	std::stringstream result;
+  toolbox::TimeVal deltaT = timeEnd - timeBegin;
+  if (deltaT.sec() != 0)
+    {
+      result << deltaT.sec() << " second";
+      if(deltaT.sec() > 1)
+        {
+          result << "s";
+        }
+    }
+  if (deltaT.millisec() != 0)
+    {
+      if (result.str().size() != 0)
+        {
+          result << " and ";
+        }
+      result << deltaT.millisec() << " millisecond";
+      if (deltaT.millisec() > 1)
+        {
+          result << "s";
+        }
+    }
+  if (result.str().size() == 0)
+    {
+      result << "negligible time";
+    }
+  return result.str();
+
+}
+void
+pixel::tcds::PixelTCDSSupervisor::jsonUpdateCore(xgi::Input* const in, xgi::Output* const out)
+{
+	toolbox::TimeInterval timeBegin(toolbox::TimeVal::gettimeofday());
+	
+  	tb_Config_state = fsm_.getStateName (fsm_.getCurrentState());
+  	tb_Config_TCDS = "class '" + tcdsAppClassName() + "', instance number " + std::string(itoa(tcdsAppInstance()));
+  	tb_Config_sessionID = "'" + sessionId() + "'";
+  	tb_Config_renewInteval = hwLeaseRenewalInterval();
+  	tb_Config_runNumber = runNumber_.toString();
+  	tb_Config_hardware = hwCfgFileName_.toString();
+	tb_Hardware_Configuration = hwCfgString_.toString();
+	std::replace( tb_Hardware_Configuration.begin(), tb_Hardware_Configuration.end(), '"', '@');
+	std::replace( tb_Hardware_Configuration.begin(), tb_Hardware_Configuration.end(), '\n', '<');
+	
+
+	if (statusMsg_.toString().find("error") != std::string::npos)
+    tb_Config_statusMsg = "<font color='red'>" + statusMsg_.toString() + "</font>";
+  else
+    tb_Config_statusMsg =  "'"+ statusMsg_.toString() + "'";
+	
+
+  	std::string const hwLeaseOwnerId(tcdsHwLeaseOwnerId_.toString());
+  	std::string tmpStr("");
+    if (hwLeaseOwnerId == "")
+    {
+        tmpStr = " (hardware not leased/lease expired)";
+    }
+	queryFSMStateAction();
+	queryHwLeaseOwnerAction();
+	
+  	tb_Remote_tcdsState = tcdsState_.toString();
+  	tb_Remote_Hardware = "'" + hwLeaseOwnerId + "'" + tmpStr;
+
+  	toolbox::TimeVal timeNow(toolbox::TimeVal::gettimeofday());
+	toolbox::TimeInterval upTime = timeNow - timeStart_;
+	toolbox::TimeInterval upTime_now = timeNow;
+
+  	tb_Status_uptime = upTime.toString();
+    tb_Status_timenow = formatTimestamp(timeNow);
+	//std::cout<<"timeNow="<<timeNow<<std::endl;
+	
+	toolbox::TimeInterval timeEnd(toolbox::TimeVal::gettimeofday());
+	
+	tb_Status_latestMonitoringDuration = formatDeltaTString(timeBegin, timeEnd);
+  	
+  // Check if the other side supports gzip.
+  bool doGZIP = false;
+  std::string const acceptEncoding = in->getenv("ACCEPT_ENCODING");
+  if (!acceptEncoding.empty() && (acceptEncoding.find("gzip") != std::string::npos))
+    {
+      doGZIP = true;
+    }
+
+  // Prepare the actual JSON contents.
+  std::stringstream tmp("");
+  std::string jsonTmp = "\"tb_Config_state\" : \"" + tb_Config_state + "\"";
+  jsonTmp += ",\n\"tb_Status_timenow\" : \"" + tb_Status_timenow + "\"";
+  jsonTmp += ",\n\"tb_Status_latestMonitoringDuration\" : \"" + tb_Status_latestMonitoringDuration + "\"";
+  jsonTmp += ",\n\"tb_Status_uptime\" : \"" + tb_Status_uptime + "\"";
+  jsonTmp += ",\n\"tb_Config_TCDS\" : \"" + tb_Config_TCDS + "\"";
+  jsonTmp += ",\n\"tb_Config_sessionID\" : \"" + tb_Config_sessionID + "\"";
+  jsonTmp += ",\n\"tb_Config_renewInteval\" : \"" + tb_Config_renewInteval + "\"";
+  jsonTmp += ",\n\"tb_Config_runNumber\" : \"" + tb_Config_runNumber + "\"";
+  jsonTmp += ",\n\"tb_Config_hardware\" : \"" + tb_Config_hardware + "\"";
+  jsonTmp += ",\n\"tb_Config_statusMsg\" : \"" + tb_Config_statusMsg + "\"";
+  jsonTmp += ",\n\"tb_Remote_tcdsState\" : \"" + tb_Remote_tcdsState + "\"";
+  jsonTmp += ",\n\"tb_Remote_Hardware\" : \"" + tb_Remote_Hardware + "\"";
+  jsonTmp += ",\n\"tb_Hardware_Configuration\" : \"" + tb_Hardware_Configuration + "\"";
+  
+  
+  if (!jsonTmp.empty())
+    {
+      if (!tmp.str().empty())
+        {
+          tmp << ",\n";
+        }
+      tmp << jsonTmp;
+    }
+
+
+  std::string jsonContents = "{\n" + tmp.str() + "\n}";
+
+
+  // Stuff everything into the output.
+  out->getHTTPResponseHeader().addHeader("Content-Type", "application/json");
+  // if (doGZIP)
+  //   {
+  //     out->getHTTPResponseHeader().addHeader("Content-Encoding", "gzip");
+  //     std::string const tmp = tcds::utils::compressString(jsonContents);
+  //     *out << tmp;
+  //   }
+  // else
+  //   {
+      *out << jsonContents;
+    // }
+	
+	
 }
 
 void
@@ -1194,12 +1525,12 @@ xoap::MessageReference pixel::tcds::PixelTCDSSupervisor::fireEvent ( xoap::Messa
   xoap::SOAPBody body = env.getBody();
   DOMNode* node = body.getDOMNode();
   DOMNodeList* bodyList = node->getChildNodes();
-  
+
   for ( unsigned int i = 0; i < bodyList->getLength(); i++ )
   {
     std::string responseString = "Response";
     DOMNode* command = bodyList->item(i);
-    
+
     if ( command->getNodeType() == DOMNode::ELEMENT_NODE )
     {
       std::string commandName = xoap::XMLCh2String(command->getLocalName());
@@ -1258,15 +1589,15 @@ xoap::MessageReference pixel::tcds::PixelTCDSSupervisor::fireEvent ( xoap::Messa
       else if (commandName == "Start")
       {
         try{
-          Attribute_Vector parametersReceived(1); 
-          parametersReceived[0].name_="RunNumber"; 
-          Receive(msg, parametersReceived);  
-          runNumber_=parametersReceived[0].value_; 
-        }                 
-        catch (xcept::Exception& err){          
-          responseString = toolbox::toString("An error occured: '%s'.",  
-                                             err.what()); 
-          LOG4CPLUS_ERROR(logger_, responseString);  
+          Attribute_Vector parametersReceived(1);
+          parametersReceived[0].name_="RunNumber";
+          Receive(msg, parametersReceived);
+          runNumber_=parametersReceived[0].value_;
+        }
+        catch (xcept::Exception& err){
+          responseString = toolbox::toString("An error occured: '%s'.",
+                                             err.what());
+          LOG4CPLUS_ERROR(logger_, responseString);
           this->notifyQualified("error",err);
         }
         enableAction();
@@ -1311,6 +1642,10 @@ xoap::MessageReference pixel::tcds::PixelTCDSSupervisor::fireEvent ( xoap::Messa
       {
         sendL1AAction();
       }
+	  else if (commandName == "update")
+      {
+        JSONAction();
+      }
       else if (commandName == "SendBgo")
       {
         // find out whether BgoNumber or BgoName or BgoTrain have been passed
@@ -1347,7 +1682,7 @@ xoap::MessageReference pixel::tcds::PixelTCDSSupervisor::fireEvent ( xoap::Messa
 void
 pixel::tcds::PixelTCDSSupervisor::readConfigFile()
 {
- 
+
   // open hwCfgFileName_ and store to hwCfgString_
   std::string responseString;
   std::ifstream hwCfgFile;
@@ -1359,12 +1694,12 @@ pixel::tcds::PixelTCDSSupervisor::readConfigFile()
                      std::istreambuf_iterator<char>());
     LOG4CPLUS_INFO(logger_, inString);
     hwCfgString_ = inString;
-    
+
   }
   else {
     responseString = "Error opening file " + hwCfgFileName_.toString();
     LOG4CPLUS_ERROR(logger_, responseString);
   }
   hwCfgFile.close();
-  
+
 }
